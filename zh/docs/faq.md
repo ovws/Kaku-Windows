@@ -16,7 +16,7 @@
 
 ## Kaku 和 iTerm2、Warp、Ghostty、WezTerm 有什么区别？
 
-Kaku 是基于 WezTerm 的 Mac 终端，字体、主题、标签页、分屏和 shell 工具装好就配齐了，另有一个可选的 AI 助手，用的是你自己配置的 AI 服务。iTerm2 和 WezTerm 这些得自己一点点拼，Warp 是围绕账号来做的商业 AI 产品，Ghostty 是很快的 GPU 终端，只是预设少一些。哪些情况其实不用换，[对比页](https://kaku.fun/zh/compare)里写得更细。
+Kaku 是基于 WezTerm 的 Mac 终端，字体、主题、标签页、分屏和 shell 工具装好就配齐了，另有一个可选的 AI 助手，用的是你自己配置的 AI 服务。iTerm2 和 WezTerm 这些得自己一点点拼，Warp 是 AI 优先的终端，Agent 跑在 Warp 的服务器上，Ghostty 是很快的 GPU 终端，只是预设少一些。哪些情况其实不用换，[对比页](https://kaku.fun/zh/compare)里写得更细。
 
 ## 怎么开半透明窗口？
 

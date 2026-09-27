@@ -96,6 +96,7 @@
             <li><strong>出了问题能自查。</strong><code>kaku doctor</code> 会检查 app、PATH 和 shell 集成，<code>kaku config</code> 和 <code>kaku ai</code> 都是直接在终端里操作的设置界面。</li>
             <li><strong>不碰你的数据。</strong>MIT 开源，没有使用统计，App 会发出的网络请求都列在<a href="/zh/privacy">隐私页</a>。</li>
           </ul>
+          <figure class="shot"><img src="/shots/compare-doctor.webp" width="1920" height="1200" loading="lazy" alt="kaku doctor 输出，所有检查都通过"><figcaption><code>kaku doctor</code> 一次查完 app、PATH 和 shell 集成</figcaption></figure>
 
           <h2 id="compare-at-a-glance">对照</h2>
           <table>
@@ -115,7 +116,7 @@
                 <th scope="row">协议</th>
                 <td>MIT</td>
                 <td>GPL</td>
-                <td>商业软件</td>
+                <td>客户端 AGPL，后端闭源</td>
                 <td>MIT</td>
                 <td>MIT</td>
                 <td>Apple</td>
@@ -124,16 +125,16 @@
                 <th scope="row">平台</th>
                 <td>仅 macOS</td>
                 <td>macOS</td>
-                <td>macOS 及其他</td>
+                <td>macOS、Linux、Windows</td>
                 <td>macOS 和 Linux</td>
-                <td>跨平台</td>
+                <td>macOS、Linux、Windows</td>
                 <td>macOS</td>
               </tr>
               <tr>
                 <th scope="row">账号</th>
                 <td>无</td>
                 <td>无</td>
-                <td>AI 围绕账号</td>
+                <td>可选</td>
                 <td>无</td>
                 <td>无</td>
                 <td>无</td>
@@ -150,8 +151,8 @@
               <tr>
                 <th scope="row">AI</th>
                 <td>可选，用你的服务</td>
-                <td>没有内置</td>
-                <td>做进产品里</td>
+                <td>可选插件，用你的 key</td>
+                <td>内置，跑在 Warp 的服务器上</td>
                 <td>没有内置</td>
                 <td>没有内置</td>
                 <td>没有内置</td>
@@ -175,6 +176,15 @@
                 <td>系统自带</td>
               </tr>
               <tr>
+                <th scope="row">稳定版（2026 年 9 月）</th>
+                <td>0.21.0</td>
+                <td>3.7.3</td>
+                <td>每周构建</td>
+                <td>1.3.1</td>
+                <td>20240203，之后只有 nightly</td>
+                <td>随 macOS 更新</td>
+              </tr>
+              <tr>
                 <th scope="row">自检</th>
                 <td><code>kaku doctor</code></td>
                 <td>无</td>
@@ -188,18 +198,22 @@
 
           <h2 id="compare-iterm2">Kaku 和 iTerm2</h2>
           <p>iTerm2 是 Mac 上用得最久的终端替代，很多人留下是因为配置、快捷键和手感早就调顺了，Kaku 适合不想再从头搭一遍的人，字体主题开箱就有，标签分屏、会话恢复、右键菜单、可点击路径和一键打开的 Lazygit、Yazi 都在，PATH 或 shell 集成出问题时，<code>kaku doctor</code> 会直接告诉你。</p>
+          <p>iTerm2 自己也一直在更新，3.5 加了 AI 对话，要单独装插件、填自己的 API key，2026 年 9 月的 3.7 又加了标签分组和 Claude Code 集成。</p>
+          <figure class="shot"><img src="/shots/compare-panes.webp" width="1920" height="1200" loading="lazy" alt="Kaku 窗口，三个标签，其中一个拆成三个分屏"><figcaption>三个标签加一组分屏，退出重开还是原样</figcaption></figure>
           <p>现有的 iTerm2 配置用得好好的，或者要用 Kaku 还没有的功能，那就继续用 iTerm2，Kaku 也不打算把它完整复刻一遍。</p>
 
           <h2 id="compare-warp">Kaku 和 Warp</h2>
-          <p>Warp 是商业软件，AI 优先，助手和工作流就是产品本身，Kaku 是 MIT 开源，没有账号，也不提供或中转 AI 服务，运行 <code>kaku ai</code> 填上你自己的服务就行，报错修复、<code>#</code> 生成命令、<span class="sk">Cmd + L</span> 打开对话这些都有，但不会自动执行任何东西，<span class="sk">Cmd + Shift + E</span> 只是把建议放到命令行，不配 AI 也不影响其他功能。</p>
+          <p>Warp 现在管自己叫 agentic development environment，Agent 就是产品本身，客户端 2026 年起按 AGPL 开源了，但 Agent 跑在 Warp 的服务器上，已经买了的 Claude 或 Codex 订阅用不上，付费档 20 美元一个月起。Kaku 是 MIT 开源，没有账号，也不提供或中转 AI 服务，运行 <code>kaku ai</code> 填上你自己的服务就行，报错修复、<code>#</code> 生成命令、<span class="sk">Cmd + L</span> 打开对话这些都有，但不会自动执行任何东西，<span class="sk">Cmd + Shift + E</span> 只是把建议放到命令行，不配 AI 也不影响其他功能。</p>
           <p>想要终端里一整套托管的 AI 产品，选 Warp，想要开源、AI 可选而且只走你自己配置的 Mac 终端，选 Kaku。</p>
 
           <h2 id="compare-ghostty">Kaku 和 Ghostty</h2>
-          <p>Ghostty 是很快的 GPU 终端，MIT 开源，如果 shell 工具、字体和工作流你都已经配好了，它很合适，Kaku 同样用 GPU 渲染，区别在于已经接好的那一层，JetBrains Mono、自动主题、会话恢复、补全和 <code>z</code>、Lazygit、Yazi、远程文件，还有可选的助手。</p>
+          <p>Ghostty 是很快的 GPU 终端，MIT 开源，标签和分屏用的是 macOS 原生控件，还有从菜单栏落下来的 Quick Terminal，也能恢复窗口，如果 shell 工具、字体和工作流你都已经配好了，它很合适，Kaku 同样用 GPU 渲染，区别在于已经接好的那一层，JetBrains Mono、自动主题、补全和 <code>z</code>、Lazygit、Yazi、远程文件，还有可选的助手。</p>
+          <figure class="shot"><img src="/shots/compare-lazygit.webp" width="1920" height="1200" loading="lazy" alt="在 Kaku 里运行的 Lazygit 提交记录"><figcaption><span class="sk">Cmd + Shift + G</span> 在当前仓库打开 Lazygit</figcaption></figure>
           <p>想要更轻的终端，现有配置也顺手，就继续用 Ghostty，缺的是开箱那一套、又不想再写一份配置，可以试试 Kaku。</p>
 
           <h2 id="compare-wezterm">Kaku 和 WezTerm</h2>
-          <p>Kaku 从 WezTerm 衍生而来，保留了它的 Lua 配置和渲染引擎，再把 WezTerm 留给你自己做的 Mac 这一层补上，包括默认值、shell 集成、Tab Navigator、窗口快照、<code>kaku</code> 命令和可选助手，已有的 WezTerm 配置大多能直接用，个别上游选项行为不同，见<a href="/zh/docs/configuration">配置说明</a>。</p>
+          <p>Kaku 从 WezTerm 衍生而来，保留了它的 Lua 配置和渲染引擎，再把 WezTerm 留给你自己做的 Mac 这一层补上，包括默认值、shell 集成、Tab Navigator、窗口快照、<code>kaku</code> 命令和可选助手，已有的 WezTerm 配置大多能直接用，个别上游选项行为不同，见<a href="/zh/docs/configuration">配置说明</a>。上游最近一个稳定版还是 2024 年 2 月发的，之后的改动都只进 nightly。</p>
+          <figure class="shot"><img src="/shots/compare-config.webp" width="1920" height="1200" loading="lazy" alt="kaku config 设置界面，包含主题、字体和窗口选项"><figcaption><code>kaku config</code> 改常用设置，不用打开 Lua 文件</figcaption></figure>
           <p>要在 Windows 或 Linux 上用，或者就想要原版，继续用 WezTerm，Kaku 只做 macOS。</p>
 
           <h2 id="compare-terminal-app">Kaku 和系统终端</h2>

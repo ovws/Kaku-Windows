@@ -16,7 +16,7 @@ Not yet. Kaku is macOS-only while the Mac version gets polished, and Windows and
 
 ## How is Kaku different from iTerm2, Warp, Ghostty, or WezTerm?
 
-Kaku is a WezTerm-based Mac terminal with fonts, themes, tabs, panes, and shell tools set up out of the box, plus an optional assistant that uses the AI service you configure. iTerm2 and WezTerm expect you to assemble more of that yourself. Warp is a commercial, account-centered AI product. Ghostty is a fast GPU terminal with fewer presets. See the [comparison page](https://kaku.fun/compare) for when to stay put.
+Kaku is a WezTerm-based Mac terminal with fonts, themes, tabs, panes, and shell tools set up out of the box, plus an optional assistant that uses the AI service you configure. iTerm2 and WezTerm expect you to assemble more of that yourself. Warp is an AI-first terminal whose agents run on Warp's servers. Ghostty is a fast GPU terminal with fewer presets. See the [comparison page](https://kaku.fun/compare) for when to stay put.
 
 ## Can I use a transparent window?
 

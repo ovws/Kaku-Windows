@@ -96,6 +96,7 @@
             <li><strong>Easy to troubleshoot.</strong> <code>kaku doctor</code> checks the app, PATH, and shell integration, and <code>kaku config</code> and <code>kaku ai</code> are settings screens right in the terminal.</li>
             <li><strong>Leaves your data alone.</strong> MIT licensed with no usage analytics, and every network request the app can make is listed on the <a href="/privacy">privacy page</a>.</li>
           </ul>
+          <figure class="shot"><img src="/shots/compare-doctor.webp" width="1920" height="1200" loading="lazy" alt="kaku doctor output with every check passing"><figcaption><code>kaku doctor</code> checks the app, PATH, and shell integration in one go</figcaption></figure>
 
           <h2 id="compare-at-a-glance">At a glance</h2>
           <table>
@@ -115,7 +116,7 @@
                 <th scope="row">License</th>
                 <td>MIT</td>
                 <td>GPL</td>
-                <td>Commercial</td>
+                <td>AGPL client, closed backend</td>
                 <td>MIT</td>
                 <td>MIT</td>
                 <td>Apple</td>
@@ -124,16 +125,16 @@
                 <th scope="row">Platform</th>
                 <td>macOS only</td>
                 <td>macOS</td>
-                <td>macOS and more</td>
+                <td>macOS, Linux, Windows</td>
                 <td>macOS and Linux</td>
-                <td>Cross-platform</td>
+                <td>macOS, Linux, Windows</td>
                 <td>macOS</td>
               </tr>
               <tr>
                 <th scope="row">Account</th>
                 <td>None</td>
                 <td>None</td>
-                <td>Account-centered AI</td>
+                <td>Optional</td>
                 <td>None</td>
                 <td>None</td>
                 <td>None</td>
@@ -150,8 +151,8 @@
               <tr>
                 <th scope="row">AI</th>
                 <td>Optional, your provider</td>
-                <td>None built in</td>
-                <td>Built into the product</td>
+                <td>Optional plugin, your key</td>
+                <td>Built in, runs on Warp's servers</td>
                 <td>None built in</td>
                 <td>None built in</td>
                 <td>None built in</td>
@@ -175,6 +176,15 @@
                 <td>Built in</td>
               </tr>
               <tr>
+                <th scope="row">Stable (Sep 2026)</th>
+                <td>0.21.0</td>
+                <td>3.7.3</td>
+                <td>Weekly builds</td>
+                <td>1.3.1</td>
+                <td>20240203, then nightly</td>
+                <td>Ships with macOS</td>
+              </tr>
+              <tr>
                 <th scope="row">Checkup</th>
                 <td><code>kaku doctor</code></td>
                 <td>None</td>
@@ -188,18 +198,22 @@
 
           <h2 id="compare-iterm2">Kaku vs iTerm2</h2>
           <p>iTerm2 is the long-running macOS replacement for Terminal.app. People stay because they already have profiles, shortcuts, and muscle memory. Kaku suits people who want that setup without building it by hand, with fonts and themes from day one, Mac-native tab and pane shortcuts, session restore, a right-click menu, clickable paths, and Lazygit or Yazi on a shortcut. When PATH or shell integration is off, <code>kaku doctor</code> tells you.</p>
+          <p>iTerm2 keeps moving too. Version 3.5 added AI chat through a separate plugin that uses your own API key, and 3.7 in September 2026 brought tab groups and Claude Code integration.</p>
+          <figure class="shot"><img src="/shots/compare-panes.webp" width="1920" height="1200" loading="lazy" alt="Kaku window with three tabs and one tab split into three panes"><figcaption>Three tabs and a split window, back as they were after a relaunch</figcaption></figure>
           <p>If your iTerm2 setup is working well, or you rely on something Kaku does not have, stay on iTerm2. Kaku is not trying to be a full iTerm2 clone.</p>
 
           <h2 id="compare-warp">Kaku vs Warp</h2>
-          <p>Warp is a commercial, AI-first terminal where the assistant and workflows are the product. Kaku is MIT licensed, has no account, and does not provide or relay an AI service. Run <code>kaku ai</code>, point it at your own provider, and you get fixes for failed commands, <code>#</code> to write a command from a sentence, and <span class="sk">Cmd + L</span> for chat. Nothing runs on its own, since <span class="sk">Cmd + Shift + E</span> only drops a suggestion at the prompt. Skip AI entirely and the rest of the terminal works the same.</p>
+          <p>Warp now calls itself an agentic development environment, and the agent is the product. The client has been open source under AGPL since 2026, but the agents run on Warp's servers, so a Claude or Codex subscription you already pay for does not carry over, and paid plans start at $20 a month. Kaku is MIT licensed, has no account, and does not provide or relay an AI service. Run <code>kaku ai</code>, point it at your own provider, and you get fixes for failed commands, <code>#</code> to write a command from a sentence, and <span class="sk">Cmd + L</span> for chat. Nothing runs on its own, since <span class="sk">Cmd + Shift + E</span> only drops a suggestion at the prompt. Skip AI entirely and the rest of the terminal works the same.</p>
           <p>Pick Warp if you want a hosted AI product in your terminal. Pick Kaku if you want an open-source Mac terminal where AI is optional and runs on your own setup.</p>
 
           <h2 id="compare-ghostty">Kaku vs Ghostty</h2>
-          <p>Ghostty is a fast, MIT-licensed GPU terminal. It is a great choice if you already have your own shell tools, fonts, and workflow. Kaku also renders on the GPU, and the difference is what comes already hooked up: JetBrains Mono, automatic themes, session restore, completions and <code>z</code>, Lazygit, Yazi, remote files, and the optional assistant.</p>
+          <p>Ghostty is a fast, MIT-licensed GPU terminal with native macOS tabs and splits, a Quick Terminal that drops down from the menu bar, and window restore. It is a great choice if you already have your own shell tools, fonts, and workflow. Kaku also renders on the GPU, and the difference is what comes already hooked up: JetBrains Mono, automatic themes, completions and <code>z</code>, Lazygit, Yazi, remote files, and the optional assistant.</p>
+          <figure class="shot"><img src="/shots/compare-lazygit.webp" width="1920" height="1200" loading="lazy" alt="Lazygit commit log running inside Kaku"><figcaption><span class="sk">Cmd + Shift + G</span> opens Lazygit in the current repository</figcaption></figure>
           <p>Stay on Ghostty if you want something leaner and like your current setup. Try Kaku if what you are missing is the out-of-the-box suite, not another config file.</p>
 
           <h2 id="compare-wezterm">Kaku vs WezTerm</h2>
-          <p>Kaku is derived from WezTerm. It keeps WezTerm's Lua config and rendering engine, then adds the Mac layer WezTerm leaves to you, with defaults, shell integration, Tab Navigator, window snapshots, the <code>kaku</code> CLI, and the optional assistant. Most existing WezTerm configs carry over, though a few upstream options behave differently, so check the <a href="/docs/configuration">configuration guide</a>.</p>
+          <p>Kaku is derived from WezTerm. It keeps WezTerm's Lua config and rendering engine, then adds the Mac layer WezTerm leaves to you, with defaults, shell integration, Tab Navigator, window snapshots, the <code>kaku</code> CLI, and the optional assistant. Most existing WezTerm configs carry over, though a few upstream options behave differently, so check the <a href="/docs/configuration">configuration guide</a>. Upstream's last stable release came out in February 2024, and new work ships as nightly builds.</p>
+          <figure class="shot"><img src="/shots/compare-config.webp" width="1920" height="1200" loading="lazy" alt="kaku config settings screen with theme, font, and window options"><figcaption><code>kaku config</code> changes common settings without opening the Lua file</figcaption></figure>
           <p>Stay on WezTerm if you need Windows or Linux, or want upstream as it is. Kaku is Mac only.</p>
 
           <h2 id="compare-terminal-app">Kaku vs Terminal.app</h2>
