@@ -662,9 +662,9 @@ button, input { font: inherit; }
   line-height: 1.72;
 }
 .doc-content > :first-child { margin-top: 0; }
-/* Sidebar-less prose pages (about, contact, privacy) reuse .doc-content
-   but need the same reading width as .release-doc. */
-.prose-doc { max-width: 860px; }
+/* Sidebar-less prose pages (about, compare, contact, privacy) reuse
+   .doc-content and span the same width as their page hero. */
+.prose-doc { max-width: none; }
 .doc-content .shot { margin: 28px 0 36px; }
 .doc-content h2, .doc-content h3, .doc-content h4 {
   position: relative;
