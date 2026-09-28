@@ -62,7 +62,7 @@ local function default_kaku_user_config_path()
   if xdg and xdg ~= '' then
     return xdg .. '/kaku/kaku.lua'
   end
-  local home = os.getenv('HOME')
+  local home = os.getenv('HOME') or os.getenv('USERPROFILE')
   if home then
     return home .. '/.config/kaku/kaku.lua'
   end
@@ -77,6 +77,8 @@ local function is_bundled_kaku_config_path(path)
   local normalized = path:gsub('\\', '/')
   return normalized:match('/Kaku%.app/Contents/Resources/kaku%.lua$') ~= nil
     or normalized:match('/assets/macos/Kaku%.app/Contents/Resources/kaku%.lua$') ~= nil
+    or normalized:match('/assets/windows/kaku%.lua$') ~= nil
+    or normalized:match('/Kaku%-Windows%-x64/kaku%.lua$') ~= nil
 end
 
 -- Detect if user has custom config overrides in their config file.
@@ -4412,11 +4414,15 @@ end
 
 -- ===== Shell =====
 (function()
-  local user_shell = os.getenv('SHELL')
-  if user_shell and #user_shell > 0 then
-    config.default_prog = { user_shell, '-l' }
+  if package.config:sub(1, 1) == '\\' then
+    config.default_prog = { 'powershell.exe', '-NoLogo' }
   else
-    config.default_prog = { '/bin/zsh', '-l' }
+    local user_shell = os.getenv('SHELL')
+    if user_shell and #user_shell > 0 then
+      config.default_prog = { user_shell, '-l' }
+    else
+      config.default_prog = { '/bin/zsh', '-l' }
+    end
   end
 end)()
 
@@ -4807,7 +4813,41 @@ config.mouse_bindings = {
   },
 }
 
+-- Windows uses Ctrl/Alt where the bundled macOS config uses Command/Option.
+if package.config:sub(1, 1) == '\\' then
+  (function()
+    local function windows_modifiers(modifiers)
+      local seen = {}
+      local mapped = {}
+      for modifier in modifiers:gmatch('[^|]+') do
+        if modifier == 'CMD' then
+          modifier = 'CTRL'
+        elseif modifier == 'OPT' then
+          modifier = 'ALT'
+        end
+        if not seen[modifier] then
+          seen[modifier] = true
+          table.insert(mapped, modifier)
+        end
+      end
+      return table.concat(mapped, '|')
+    end
+
+    for _, bindings in ipairs({ config.keys, config.mouse_bindings }) do
+      for _, binding in ipairs(bindings or {}) do
+        if type(binding.mods) == 'string' then
+          binding.mods = windows_modifiers(binding.mods)
+        end
+      end
+    end
+  end)()
+end
+
 -- ===== Rendering & Performance =====
+if package.config:sub(1, 1) == '\\' then
+  config.font_dirs = config.font_dirs or {}
+  table.insert(config.font_dirs, wezterm.executable_dir .. '/fonts')
+end
 config.enable_scroll_bar = false
 config.front_end = 'WebGpu'
 config.webgpu_power_preference = 'LowPower'

@@ -63,9 +63,10 @@ fn resolve_k_binary() -> anyhow::Result<PathBuf> {
 
     // 1. Same directory as the running `kaku` binary (the bundled case).
     if let Ok(exe) = std::env::current_exe() {
-        candidates.push(exe.with_file_name("k"));
+        let bundled_k_name = if cfg!(windows) { "k.exe" } else { "k" };
+        candidates.push(exe.with_file_name(bundled_k_name));
         if let Ok(canonical) = std::fs::canonicalize(&exe) {
-            let beside_canonical = canonical.with_file_name("k");
+            let beside_canonical = canonical.with_file_name(bundled_k_name);
             if !candidates.contains(&beside_canonical) {
                 candidates.push(beside_canonical);
             }

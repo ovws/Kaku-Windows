@@ -27,3 +27,11 @@ project distributes:
   combined licensing document is reproduced whole in
   [`assets/fonts/SymbolsNerdFont-LICENSE.txt`](assets/fonts/SymbolsNerdFont-LICENSE.txt)
   rather than excerpted, so the terms are not narrowed by this repository.
+
+## Windows runtime assets
+
+The Windows Release package downloads ConPTY, ANGLE, Mesa, and manifest assets
+from the pinned WezTerm revision documented in
+[`assets/windows/README.md`](assets/windows/README.md). The accompanying
+Microsoft Terminal and Mesa notices are retained in `assets/windows`. ANGLE is
+distributed under its BSD 3-Clause license.

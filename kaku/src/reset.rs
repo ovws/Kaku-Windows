@@ -1,6 +1,7 @@
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use std::io::{self, IsTerminal, Write};
+#[cfg(target_os = "macos")]
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};

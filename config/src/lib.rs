@@ -704,9 +704,18 @@ fn minimal_user_config_template() -> &'static str {
     r#"local wezterm = require 'wezterm'
 
 local function resolve_bundled_config()
+  -- Windows packages place the bundled config beside Kaku.exe. This also
+  -- works for portable ZIP installs regardless of the folder name.
+  local windows_bundled = wezterm.executable_dir .. '/kaku.lua'
+  local f = io.open(windows_bundled, 'r')
+  if f then
+    f:close()
+    return windows_bundled
+  end
+
   local resource_dir = wezterm.executable_dir:gsub('MacOS/?$', 'Resources')
   local bundled = resource_dir .. '/kaku.lua'
-  local f = io.open(bundled, 'r')
+  f = io.open(bundled, 'r')
   if f then
     f:close()
     return bundled
@@ -1056,6 +1065,10 @@ mod tests {
         assert!(
             content.contains("'Kaku Light'") && content.contains("'Auto'"),
             "generated user config should name the other theme choices"
+        );
+        assert!(
+            content.contains("wezterm.executable_dir .. '/kaku.lua'"),
+            "generated user config should load the portable bundled defaults"
         );
     }
 

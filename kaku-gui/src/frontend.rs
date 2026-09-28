@@ -72,13 +72,14 @@ fn resolve_bundled_kaku_bin() -> anyhow::Result<PathBuf> {
     }
 
     let current_exe = std::env::current_exe().context("resolve executable path")?;
+    let bundled_kaku_name = if cfg!(windows) { "kaku.exe" } else { "kaku" };
     if let Some(parent) = current_exe.parent() {
-        add_candidate(&mut candidates, parent.join("kaku"));
+        add_candidate(&mut candidates, parent.join(bundled_kaku_name));
     }
 
     if let Ok(resolved_exe) = std::fs::canonicalize(&current_exe) {
         if let Some(parent) = resolved_exe.parent() {
-            add_candidate(&mut candidates, parent.join("kaku"));
+            add_candidate(&mut candidates, parent.join(bundled_kaku_name));
         }
     }
 

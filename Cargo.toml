@@ -98,7 +98,7 @@ chrono = {version="0.4", default-features=false, features=["unstable-locales", "
 clap = {version="4.0", features=["derive"]}
 clap_complete = "4.4"
 clap_complete_fig = "4.0"
-clipboard-win = "2.2"
+clipboard-win = "5.4.1"
 cocoa = "=0.25.0"
 codec = { path = "crates/codec" }
 color-funcs = { path = "lua-api-crates/color-funcs" }
@@ -298,8 +298,8 @@ wezterm-term = { path = "term" }
 wezterm-toast-notification = { path = "crates/wezterm-toast-notification" }
 wezterm-uds = { path = "crates/wezterm-uds" }
 wezterm-version = { path = "crates/wezterm-version" }
-# macOS-only: only compile Metal backend (removes Vulkan, DX12, GL)
-wgpu = { version = "25.0.2", default-features = false, features = ["metal", "wgsl"] }
+# Keep the native Metal backend on macOS and enable DirectX 12 plus GLES for Windows.
+wgpu = { version = "25.0.2", default-features = false, features = ["metal", "dx12", "gles", "wgsl"] }
 whoami = "1.5"
 winapi = "0.3.9"
 window = {path="window"}

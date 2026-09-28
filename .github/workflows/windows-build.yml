@@ -1,0 +1,132 @@
+name: Windows Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Optional tag name; set this to publish a GitHub Release after a successful build.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Windows x64
+    runs-on: windows-latest
+    env:
+      CARGO_BUILD_JOBS: 2
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7 # stable
+        with:
+          toolchain: 1.95.0
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Download verified Windows runtime assets
+        shell: pwsh
+        run: ./scripts/download_windows_assets.ps1
+
+      - name: Resolve Windows dependency lock
+        shell: pwsh
+        run: cargo metadata --format-version 1 > $null
+
+      - name: Commit resolved Windows dependency lock
+        shell: pwsh
+        run: |
+          if (git diff --quiet -- Cargo.lock) {
+            Write-Host 'Cargo.lock is already current.'
+          } else {
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add Cargo.lock
+            git commit -m 'build: update lockfile for Windows backend'
+            git push origin "HEAD:$env:GITHUB_REF_NAME"
+          }
+
+      - name: Build Kaku binaries
+        shell: pwsh
+        run: cargo build --locked --profile release-opt -p kaku -p kaku-gui
+
+      - name: Assemble Windows package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $build = Join-Path $PWD 'target/release-opt'
+          $stage = Join-Path $PWD 'dist/Kaku-Windows-x64'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          Copy-Item (Join-Path $build 'kaku-gui.exe') (Join-Path $stage 'Kaku.exe')
+          Copy-Item (Join-Path $build 'kaku.exe') (Join-Path $stage 'kaku.exe')
+          Copy-Item (Join-Path $build 'k.exe') (Join-Path $stage 'k.exe')
+          Copy-Item (Join-Path $build '*.dll') $stage
+          Copy-Item (Join-Path $build 'OpenConsole.exe') $stage
+          Copy-Item (Join-Path $build 'mesa') (Join-Path $stage 'mesa') -Recurse
+          Copy-Item 'assets/macos/Kaku.app/Contents/Resources/kaku.lua' (Join-Path $stage 'kaku.lua')
+          Copy-Item 'assets/fonts' (Join-Path $stage 'fonts') -Recurse
+          New-Item -ItemType Directory -Force -Path (Join-Path $stage 'notices') | Out-Null
+          Copy-Item 'assets/windows/README.md' (Join-Path $stage 'notices/Windows-runtime-assets.txt')
+          Copy-Item 'assets/windows/conhost-README.md' (Join-Path $stage 'notices/Microsoft-ConPTY.txt')
+          Copy-Item 'assets/windows/mesa-README.md' (Join-Path $stage 'notices/Mesa.txt')
+          Copy-Item 'README.md' (Join-Path $stage 'README.txt')
+          Copy-Item 'LICENSE.md' $stage
+          Copy-Item 'NOTICE.md' $stage
+
+          $required = @('Kaku.exe', 'kaku.exe', 'k.exe', 'kaku.lua', 'fonts/JetBrainsMono-Regular.ttf', 'fonts/SymbolsNerdFontMono-Regular.ttf', 'conpty.dll', 'OpenConsole.exe', 'libEGL.dll', 'libGLESv2.dll', 'mesa/opengl32.dll', 'notices/Microsoft-ConPTY.txt', 'notices/Mesa.txt')
+          foreach ($path in $required) {
+            if (-not (Test-Path (Join-Path $stage $path))) {
+              throw "Windows package is missing required file: $path"
+            }
+          }
+
+          $zipPath = Join-Path $PWD 'dist/Kaku-Windows-x64.zip'
+          Compress-Archive -Path $stage -DestinationPath $zipPath -CompressionLevel Optimal
+          $mainExe = Join-Path $stage 'Kaku.exe'
+          $hashPath = Join-Path $PWD 'dist/SHA256SUMS.txt'
+          $zipHash = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $exeHash = (Get-FileHash $mainExe -Algorithm SHA256).Hash.ToLowerInvariant()
+          @("$zipHash  Kaku-Windows-x64.zip", "$exeHash  Kaku.exe") | Set-Content $hashPath -Encoding ascii
+
+          @'
+          Kaku for Windows x64
+
+          Extract the full Kaku-Windows-x64.zip folder, then run Kaku.exe.
+          Keep the helper executables and runtime DLLs beside Kaku.exe.
+          Windows PowerShell is the default shell. The bundled config maps Kaku's
+          macOS Command-key shortcuts to Windows Ctrl/Alt shortcuts.
+          '@ | Set-Content (Join-Path $PWD 'dist/release-notes.md') -Encoding utf8
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Kaku-Windows-x64
+          path: |
+            dist/Kaku-Windows-x64.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: ${{ inputs.release_tag != '' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          gh release create $env:RELEASE_TAG `
+            'dist/Kaku-Windows-x64.zip' `
+            'dist/Kaku-Windows-x64/Kaku.exe' `
+            'dist/SHA256SUMS.txt' `
+            --title "Kaku for Windows $env:RELEASE_TAG" `
+            --notes-file 'dist/release-notes.md' `
+            --latest

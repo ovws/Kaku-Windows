@@ -45,6 +45,26 @@ wezterm-color-types.workspace = true
 wezterm-font.workspace = true
 wezterm-input-types.workspace = true
 
+[target."cfg(windows)".dependencies]
+clipboard-win = { workspace = true, features = ["std"] }
+shared_library.workspace = true
+winapi = { workspace = true, features = [
+    "dwmapi",
+    "handleapi",
+    "imm",
+    "libloaderapi",
+    "shellscalingapi",
+    "synchapi",
+    "sysinfoapi",
+    "winerror",
+    "winuser",
+] }
+windows = { workspace = true, features = [
+    "UI_ViewManagement",
+    "Win32_Devices_Display",
+] }
+winreg.workspace = true
+
 [target.'cfg(target_os="macos")'.dependencies]
 cgl.workspace = true
 cocoa.workspace = true
