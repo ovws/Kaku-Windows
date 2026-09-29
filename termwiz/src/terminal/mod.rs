@@ -16,11 +16,15 @@ use serde::Serialize;
 
 #[cfg(unix)]
 pub mod unix;
+#[cfg(windows)]
+pub mod windows;
 
 pub mod buffered;
 
 #[cfg(unix)]
 pub use self::unix::{UnixTerminal, UnixTerminalWaker as TerminalWaker};
+#[cfg(windows)]
+pub use self::windows::{WindowsTerminal, WindowsTerminalWaker as TerminalWaker};
 
 /// Represents the size of the terminal screen.
 /// The number of rows and columns of character cells are expressed.
@@ -110,6 +114,8 @@ pub trait Terminal {
 /// something unusual and want easier access to the constructors.
 #[cfg(unix)]
 pub type SystemTerminal = UnixTerminal;
+#[cfg(windows)]
+pub type SystemTerminal = WindowsTerminal;
 
 /// Construct a new instance of Terminal.
 /// The terminal will have a renderer that is influenced by the configuration
