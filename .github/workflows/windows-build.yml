@@ -19,16 +19,20 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ github.actor != 'github-actions[bot]' }}
     name: Build Windows x64
     runs-on: windows-latest
     env:
       CARGO_BUILD_JOBS: 2
-      RELEASE_TAG: ${{ inputs.release_tag || (contains(github.event.head_commit.message || '', 'release: v0.1.4') && 'v0.1.4') || '' }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Select automatic release tag
+        if: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, 'release: v0.1.4') }}
+        shell: pwsh
+        run: '"RELEASE_TAG=v0.1.4" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8'
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7 # stable
