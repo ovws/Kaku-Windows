@@ -1778,6 +1778,8 @@ unsafe fn mouse_button(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) ->
         },
         coords,
         screen_coords: client_to_screen(hwnd, coords),
+        window_origin: client_to_screen(hwnd, Point::new(0, 0)),
+        platform_click_count: 0,
         mouse_buttons,
         modifiers,
     };
@@ -1828,6 +1830,8 @@ unsafe fn nc_mouse_button(
         },
         coords,
         screen_coords: client_to_screen(hwnd, coords),
+        window_origin: client_to_screen(hwnd, Point::new(0, 0)),
+        platform_click_count: 0,
         mouse_buttons,
         modifiers,
     };
@@ -1861,6 +1865,8 @@ unsafe fn mouse_move(hwnd: HWND, _msg: UINT, wparam: WPARAM, lparam: LPARAM) -> 
         kind: MouseEventKind::Move,
         coords,
         screen_coords: client_to_screen(hwnd, coords),
+        window_origin: client_to_screen(hwnd, Point::new(0, 0)),
+        platform_click_count: 0,
         mouse_buttons,
         modifiers,
     };
@@ -1897,6 +1903,8 @@ unsafe fn nc_mouse_move(hwnd: HWND, _msg: UINT, wparam: WPARAM, lparam: LPARAM) 
         kind: MouseEventKind::Move,
         coords,
         screen_coords: client_to_screen(hwnd, coords),
+        window_origin: client_to_screen(hwnd, Point::new(0, 0)),
+        platform_click_count: 0,
         mouse_buttons,
         modifiers,
     };

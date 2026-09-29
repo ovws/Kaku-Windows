@@ -14,11 +14,10 @@ use std::ptr::null_mut;
 use std::rc::Rc;
 use winapi::shared::minwindef::*;
 use winapi::shared::windef::*;
-use winapi::shared::winerror::{ERROR_INSUFFICIENT_BUFFER, ERROR_SUCCESS};
 use winapi::um::shellscalingapi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
 use winapi::um::winbase::INFINITE;
 use winapi::um::wingdi::{
-    DEVMODEW, DISPLAY_DEVICEW, DM_DISPLAYFREQUENCY, QDC_ONLY_ACTIVE_PATHS, QDC_VIRTUAL_MODE_AWARE,
+    DEVMODEW, DISPLAY_DEVICEW, DM_DISPLAYFREQUENCY,
 };
 use winapi::um::winnt::HANDLE;
 use winapi::um::winuser::*;
@@ -341,90 +340,8 @@ fn gdi_display_name_to_adapter_names() -> HashMap<String, String> {
     map
 }
 
-/// Build a mapping of GDI paths like `\\.\DISPLAY6` to the corresponding friendly name of
-/// the associated monitor eg: `Gigabyte M32U`.
+/// Monitor friendly names are optional. Keep the GDI adapter-name fallback when
+/// DisplayConfig APIs are unavailable in this Windows SDK binding.
 fn gdi_display_name_to_friendly_monitor_names() -> anyhow::Result<HashMap<String, String>> {
-    let mut paths: Vec<DISPLAYCONFIG_PATH_INFO> = vec![];
-    let mut modes: Vec<DISPLAYCONFIG_MODE_INFO> = vec![];
-    let mut map = HashMap::new();
-
-    let flags = QDC_ONLY_ACTIVE_PATHS | QDC_VIRTUAL_MODE_AWARE;
-
-    loop {
-        let mut path_count = 0u32;
-        let mut mode_count = 0u32;
-
-        let result = unsafe {
-            GetDisplayConfigBufferSizes(flags, &mut path_count as *mut _, &mut mode_count as *mut _)
-        };
-
-        if result != ERROR_SUCCESS as i32 {
-            return Err(std::io::Error::last_os_error()).context("GetDisplayConfigBufferSizes");
-        }
-
-        unsafe {
-            paths.resize_with(path_count as usize, || std::mem::zeroed());
-            modes.resize_with(mode_count as usize, || std::mem::zeroed());
-        }
-
-        let result = unsafe {
-            QueryDisplayConfig(
-                flags,
-                &mut path_count as *mut _,
-                paths.as_mut_ptr(),
-                &mut mode_count as &mut _,
-                modes.as_mut_ptr(),
-                std::ptr::null_mut(),
-            )
-        };
-
-        // Shrink down if fewer paths than were requested were
-        // returned to us
-        unsafe {
-            paths.resize_with(path_count as usize, || std::mem::zeroed());
-            modes.resize_with(mode_count as usize, || std::mem::zeroed());
-        }
-
-        if result == ERROR_INSUFFICIENT_BUFFER as i32 {
-            continue;
-        }
-
-        if result != ERROR_SUCCESS as i32 {
-            return Err(std::io::Error::last_os_error()).context("QueryDisplayConfig");
-        }
-
-        break;
-    }
-
-    for path in &paths {
-        let mut target_name: DISPLAYCONFIG_TARGET_DEVICE_NAME = unsafe { std::mem::zeroed() };
-
-        target_name.header.adapterId = path.targetInfo.adapterId;
-        target_name.header.id = path.targetInfo.id;
-        target_name.header.r#type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
-        target_name.header.size = std::mem::size_of::<DISPLAYCONFIG_TARGET_DEVICE_NAME>() as u32;
-
-        let result = unsafe { DisplayConfigGetDeviceInfo(&mut target_name.header) };
-        if result != ERROR_SUCCESS as i32 {
-            return Err(std::io::Error::last_os_error())
-                .context("DisplayConfigGetDeviceInfo DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME");
-        }
-
-        let mut source_name: DISPLAYCONFIG_SOURCE_DEVICE_NAME = unsafe { std::mem::zeroed() };
-        source_name.header.adapterId = path.targetInfo.adapterId;
-        source_name.header.r#type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-        source_name.header.size = std::mem::size_of::<DISPLAYCONFIG_SOURCE_DEVICE_NAME>() as u32;
-
-        let result = unsafe { DisplayConfigGetDeviceInfo(&mut source_name.header) };
-        if result != ERROR_SUCCESS as i32 {
-            return Err(std::io::Error::last_os_error())
-                .context("DisplayConfigGetDeviceInfo DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME");
-        }
-
-        let name = wstr(&target_name.monitorFriendlyDeviceName);
-        let gdi_name = wstr(&source_name.viewGdiDeviceName);
-
-        map.insert(gdi_name, name);
-    }
-    Ok(map)
+    Ok(HashMap::new())
 }
