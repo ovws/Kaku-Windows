@@ -1,6 +1,8 @@
 name: Windows Build
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -17,11 +19,12 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.actor != 'github-actions[bot]' }}
     name: Build Windows x64
     runs-on: windows-latest
     env:
       CARGO_BUILD_JOBS: 2
-      RELEASE_TAG: ${{ inputs.release_tag }}
+      RELEASE_TAG: ${{ inputs.release_tag || (contains(github.event.head_commit.message || '', 'release: v0.1.4') && 'v0.1.4') || '' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
@@ -119,7 +122,7 @@ jobs:
           retention-days: 14
 
       - name: Publish GitHub Release
-        if: ${{ inputs.release_tag != '' }}
+        if: ${{ env.RELEASE_TAG != '' }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
