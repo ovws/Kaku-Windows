@@ -51,6 +51,9 @@ pub use cmdbuilder::CommandBuilder;
 #[cfg(unix)]
 pub mod unix;
 
+#[cfg(windows)]
+pub mod win;
+
 pub mod serial;
 
 /// Represents the size of the visible display area in the pty
