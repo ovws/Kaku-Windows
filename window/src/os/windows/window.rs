@@ -1997,6 +1997,8 @@ unsafe fn mouse_wheel(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> 
         },
         coords,
         screen_coords,
+        window_origin: client_to_screen(hwnd, Point::new(0, 0)),
+        platform_click_count: 0,
         mouse_buttons,
         modifiers,
     };
