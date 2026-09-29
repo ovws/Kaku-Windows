@@ -67,7 +67,7 @@ termios.workspace = true
 nix = {workspace=true, features=["mman", "fs"]}
 
 [target."cfg(windows)".dependencies]
-windows-sys = { version = "0.52", features = [
+windows-sys = { version = "0.61.2", features = [
     "Win32_Foundation",
     "Win32_Globalization",
     "Win32_System_Console",

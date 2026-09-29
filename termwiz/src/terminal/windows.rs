@@ -834,9 +834,17 @@ impl Terminal for WindowsTerminal {
 
             let records = self.input_handle.read_console_input(pending)?;
 
+            // Kaku's existing parser uses winapi INPUT_RECORD while the Windows
+            // terminal backend uses windows-sys. Both types mirror the SDK ABI.
+            let records = unsafe {
+                std::slice::from_raw_parts(
+                    records.as_ptr() as *const winapi::um::wincon::INPUT_RECORD,
+                    records.len(),
+                )
+            };
             let input_queue = &mut self.input_queue;
             self.input_parser
-                .decode_input_records(&records, &mut |evt| input_queue.push_back(evt));
+                .decode_input_records(records, &mut |evt| input_queue.push_back(evt));
         }
     }
 
