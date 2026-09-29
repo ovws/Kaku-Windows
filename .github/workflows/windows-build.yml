@@ -24,7 +24,7 @@ jobs:
     runs-on: windows-latest
     env:
       CARGO_BUILD_JOBS: 2
-      RELEASE_TAG: ${{ github.event.inputs.release_tag || '' }}
+      RELEASE_TAG: ${{ github.event.inputs.release_tag || (github.event_name == 'push' && contains(github.event.head_commit.message, '[windows-release]') && 'v0.1.0') || '' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
