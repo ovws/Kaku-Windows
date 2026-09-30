@@ -180,3 +180,15 @@ Windows packages use `Kaku.exe` for GUI, `kaku-cli.exe` for CLI and
 `kaku.exe`: Windows treats it as the same filename as `Kaku.exe`.
 A successful Linux cross-build does not replace a native Windows startup
 smoke test before release.
+
+## Following Kaku upstream
+
+Use `bash scripts/sync_upstream.sh [main-or-tag]` from a clean Windows main
+checkout to prepare a dedicated upstream merge branch. Preserve Windows
+adaptations and review incoming workflow changes. Never overwrite the port
+with upstream or force-push as a sync shortcut. The daily upstream-check
+workflow reports new commits without merging or publishing. Windows Build
+must pass on the merge PR, followed by a native Windows smoke test. Publish
+only from the validated Windows main branch using a unique Windows release
+tag; record the upstream SHA and smoke result. A stale Cargo.lock must be
+resolved explicitly and reviewed, not committed by the build workflow.

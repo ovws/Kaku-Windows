@@ -46,11 +46,41 @@ tab. Leave `release_tag` blank for a build artifact; set it to a tag such as
 `v0.1.0` to publish the ZIP, the main executable, and SHA-256 checksums in a
 GitHub Release.
 
+## Following upstream updates
+
+The **Check Kaku upstream** workflow checks `tw93/Kaku` main daily and on
+manual dispatch. It reports a failed check with the upstream commit and change
+list when this port is behind; it does not merge or publish automatically.
+Enable Actions and monitor failed-run notifications in this repository.
+
+From a clean checkout of the Windows main branch, run:
+
+```bash
+bash scripts/sync_upstream.sh           # upstream main
+bash scripts/sync_upstream.sh V0.21.0   # example: a specific upstream tag
+```
+
+The script creates a `sync/upstream-<commit>` branch and merges upstream while
+retaining Windows commits. Resolve conflicts on that branch, preserving the
+Windows backend, Cargo patches, runtime assets, bundled config and packaging.
+Review upstream workflow changes before pushing. Open a PR to main; **Windows
+Build** compiles and produces a ZIP for the PR. Its lockfile check fails on stale
+locks instead of automatically committing to the branch.
+
+Test the resulting ZIP on Windows: startup, PowerShell, tabs, panes, shortcuts,
+fonts and AI chat. Merge after validation, then dispatch **Windows Build** on
+main with a unique `release_tag` (for example `v0.21.0-windows.1`) to publish.
+For several Windows fixes on the same upstream version, increment the Windows
+suffix. Record the upstream commit and Windows smoke result in release notes.
+The scheduled check runs on the default branch at 02:17 UTC (10:17 China
+time), subject to GitHub Actions scheduling delays.
+
 ## Current platform notes
 
 - `kaku init` and managed shell integration remain macOS-only in this first
-  Windows port. The terminal starts PowerShell directly, and `kaku.exe` and
-  `k.exe` are included beside the GUI.
+  Windows port. The terminal starts PowerShell directly. `kaku-cli.exe` is
+  the CLI companion, `kaku-gui.exe` is its GUI delegation target, and `k.exe`
+  opens AI chat. Keep all three beside `Kaku.exe`.
 - Windows toast notifications are currently disabled.
 - The Windows Build workflow compiles on a Windows runner. GUI behavior should
   still be checked on a Windows desktop before treating this preview as
