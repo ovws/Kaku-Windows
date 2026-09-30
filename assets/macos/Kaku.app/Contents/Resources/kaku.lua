@@ -4871,6 +4871,15 @@ config.swallow_mouse_click_on_window_focus = true
 
 -- ===== First Run Experience & Config Version Check =====
 wezterm.on('gui-startup', function(cmd)
+  -- Unix shell installation and migration scripts require Bash.
+  -- Windows already uses its configured shell and has no Unix shell setup.
+  if package.config:sub(1, 1) == '\\' then
+    if not cmd then
+      wezterm.mux.spawn_window {}
+    end
+    return
+  end
+
   lazygit_hint_warmup_until_secs = now_secs() + lazygit_hint_startup_grace_secs
   runtime_cwd_warmup_until_secs = now_secs() + runtime_cwd_startup_grace_secs
 
