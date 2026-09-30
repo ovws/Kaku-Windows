@@ -10,14 +10,14 @@ fn main() {
             .ok()
             .and_then(|cwd| cwd.parent().map(|p| p.to_path_buf()))
             .unwrap();
-        // Cargo's PROFILE is "release" for custom profiles such as
-        // "release-opt"; derive the actual target directory from OUT_DIR.
-        let exe_output_dir = if let Ok(target_dir) = std::env::var("CARGO_TARGET_DIR") {
-            std::path::PathBuf::from(target_dir)
-        } else {
-            let out_dir = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
-            out_dir.parent().unwrap().parent().unwrap().parent().unwrap()
-        };
+        // OUT_DIR has the form target/<profile>/build/<crate-hash>/out.
+        // Walk up to Cargo's profile directory, including custom profiles and
+        // builds that set CARGO_TARGET_DIR.
+        let exe_output_dir = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap())
+            .ancestors()
+            .nth(3)
+            .expect("OUT_DIR should be under target/<profile>/build/<crate-hash>/out")
+            .to_path_buf();
         let windows_dir = repo_dir.join("assets").join("windows");
 
         let conhost_dir = windows_dir.join("conhost");
