@@ -1,8 +1,7 @@
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
-    #[cfg(windows)]
-    {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
         use anyhow::Context as _;
         use std::io::Write;
         use std::path::Path;
@@ -109,8 +108,8 @@ fn main() {
 #include <winres.h>
 // This ID is coupled with code in window/src/os/windows/window.rs
 #define IDI_ICON 0x101
-1 RT_MANIFEST "{win}\\manifest.manifest"
-IDI_ICON ICON "{win}\\terminal.ico"
+1 RT_MANIFEST "{win}/manifest.manifest"
+IDI_ICON ICON "{win}/terminal.ico"
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     1,0,0,0
 PRODUCTVERSION  1,0,0,0
@@ -140,7 +139,7 @@ BEGIN
     END
 END
 "#,
-            win = windows_dir.display().to_string().replace("\\", "\\\\"),
+            win = windows_dir.display().to_string().replace("\\", "/"),
             version = version,
         )
         .unwrap();

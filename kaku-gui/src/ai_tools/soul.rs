@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use std::io::Write;
+#[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 
@@ -85,10 +86,11 @@ pub(super) fn truncate_and_spill(result: String, cap: usize) -> Result<String> {
             .map(|d| d.as_nanos())
             .unwrap_or(0)
     ));
-    let write_result = std::fs::OpenOptions::new()
-        .create_new(true)
-        .write(true)
-        .mode(0o600)
+    let mut options = std::fs::OpenOptions::new();
+    options.create_new(true).write(true);
+    #[cfg(unix)]
+    options.mode(0o600);
+    let write_result = options
         .open(&tmp_path)
         .and_then(|mut file| file.write_all(result.as_bytes()));
     let note = if write_result.is_ok() {

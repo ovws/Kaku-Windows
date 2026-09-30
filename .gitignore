@@ -96,3 +96,10 @@ journal/
 .gstack/
 .superpowers/
 .gitnexus/
+
+# Verified Windows assets downloaded for local/cross builds
+/assets/windows/angle/
+/assets/windows/conhost/
+/assets/windows/mesa/
+/assets/windows/terminal.ico
+/scripts/__pycache__/

@@ -39,7 +39,8 @@ fn is_valid_capability(value: &str) -> bool {
 
 fn generate_capability() -> Result<String> {
     let mut bytes = [0u8; CAPABILITY_BYTES];
-    getrandom::fill(&mut bytes).context("generate inline AI capability")?;
+    getrandom::fill(&mut bytes)
+        .map_err(|err| anyhow::anyhow!("generate inline AI capability: {}", err))?;
     Ok(URL_SAFE_NO_PAD.encode(bytes))
 }
 

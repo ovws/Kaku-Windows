@@ -1,6 +1,6 @@
 //! Standalone CLI renderer for the `k` command.
 //!
-//! Interactive mode uses an alternate-screen TUI via termwiz UnixTerminal.
+//! Interactive mode uses an alternate-screen TUI via the platform terminal.
 //! One-shot mode streams tokens directly to stdout (pipe-friendly).
 
 use crate::ai_chat_engine::{Engine, StreamMsg};
@@ -526,10 +526,10 @@ fn render_tui(term: &mut dyn Terminal, tui: &Tui) -> termwiz::Result<()> {
 }
 
 fn run_repl(engine: &mut Engine) -> anyhow::Result<()> {
-    use termwiz::terminal::UnixTerminal;
+    use termwiz::terminal::new_terminal;
 
     let caps = Capabilities::new_from_env()?;
-    let mut term = UnixTerminal::new(caps)?;
+    let mut term = new_terminal(caps)?;
     term.enter_alternate_screen()?;
     term.set_raw_mode()?;
 

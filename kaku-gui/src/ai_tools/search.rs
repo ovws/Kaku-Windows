@@ -6,13 +6,12 @@ use ignore::WalkBuilder;
 use regex::RegexBuilder;
 use std::collections::HashSet;
 use std::io::{BufRead, Read};
-use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
-use super::shell::kill_process_group;
+use super::shell::{configure_process, kill_process_group};
 use super::web::{read_error_body, web_client};
 
 /// Wall-clock ceiling for symbol_search / grep_search.
@@ -656,8 +655,8 @@ pub(super) fn exec_symbol_search(
     ));
 
     cmd.stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .process_group(0);
+        .stderr(std::process::Stdio::null());
+    configure_process(&mut cmd);
     let mut child = cmd.spawn().context("symbol_search exec failed")?;
 
     let stdout_pipe = child
@@ -804,8 +803,8 @@ pub(super) fn exec_grep_search(
     ));
 
     cmd.stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .process_group(0);
+        .stderr(std::process::Stdio::piped());
+    configure_process(&mut cmd);
     let mut child = cmd.spawn().context("grep_search exec failed")?;
     let stdout = child
         .stdout

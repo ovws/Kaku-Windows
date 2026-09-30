@@ -3,7 +3,9 @@
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::io::Read;
+#[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
+#[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -15,14 +17,26 @@ use super::paths::resolve;
 /// Wall-clock ceiling for a single `shell_exec` invocation.
 pub(super) const SHELL_EXEC_TIMEOUT_SECS: u64 = 60;
 
-/// SIGKILL the entire process group. Required because `Child::kill()` only
+/// Kill the entire process tree. Required because `Child::kill()` only
 /// signals the direct child (the login shell), leaving grandchildren running.
 pub(super) fn kill_process_group(child: &std::process::Child) {
+    #[cfg(unix)]
     unsafe {
         libc::killpg(child.id() as libc::pid_t, libc::SIGKILL);
     }
+    #[cfg(windows)]
+    {
+        // Kill descendants too; Child::kill alone would leave shell jobs alive.
+        let _ = std::process::Command::new("taskkill.exe")
+            .args(["/F", "/T", "/PID", &child.id().to_string()])
+            .creation_flags(0x08000000)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+    }
 }
 
+#[cfg(unix)]
 fn shell_exec_wrapper(command: &str, cwd_tmp_path: &Path, shell: &str) -> String {
     let is_fish = Path::new(shell)
         .file_name()
@@ -42,6 +56,51 @@ fn shell_exec_wrapper(command: &str, cwd_tmp_path: &Path, shell: &str) -> String
             cwd_tmp_path.display()
         )
     }
+}
+
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+fn default_shell() -> String {
+    #[cfg(unix)]
+    {
+        std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".into())
+    }
+    #[cfg(windows)]
+    {
+        "powershell.exe".into()
+    }
+}
+
+fn shell_command(shell: &str, command: &str) -> std::process::Command {
+    let mut cmd = std::process::Command::new(shell);
+    #[cfg(unix)]
+    cmd.args(["-l", "-c", command]);
+    #[cfg(windows)]
+    cmd.args([
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        command,
+    ]);
+    cmd
+}
+
+pub(super) fn configure_process(cmd: &mut std::process::Command) {
+    #[cfg(unix)]
+    cmd.process_group(0);
+    #[cfg(windows)]
+    cmd.creation_flags(0x08000000);
+}
+
+#[cfg(windows)]
+fn shell_exec_wrapper(command: &str, cwd_tmp_path: &Path, _shell: &str) -> String {
+    let path = cwd_tmp_path.to_string_lossy().replace("\u{27}", "''");
+    format!(
+        "$global:LASTEXITCODE = 0; & {{ {} }}; $__kaku_ok = $?;          $__kaku_rc = $LASTEXITCODE;          [System.IO.File]::WriteAllText('{}', (Get-Location).Path,          [System.Text.UTF8Encoding]::new($false));          if (-not $__kaku_ok -and $__kaku_rc -eq 0) {{ $__kaku_rc = 1 }};          exit $__kaku_rc",
+        command, path
+    )
 }
 
 // ─── Background process registry ─────────────────────────────────────────────
@@ -117,24 +176,23 @@ pub(super) fn exec_shell_exec(
     // create_new + mode 0o600 ensures we own the file exclusively before the shell writes to it.
     // Propagate on failure: an EEXIST or symlink collision here would allow the shell redirection
     // to follow a pre-placed symlink, turning this into a write-anywhere primitive.
-    std::fs::OpenOptions::new()
-        .create_new(true)
-        .write(true)
-        .mode(0o600)
+    let mut options = std::fs::OpenOptions::new();
+    options.create_new(true).write(true);
+    #[cfg(unix)]
+    options.mode(0o600);
+    options
         .open(&cwd_tmp_path)
         .with_context(|| format!("could not create temp cwd file {}", cwd_tmp_path.display()))?;
-    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".into());
+    let shell = default_shell();
     let wrapped = shell_exec_wrapper(command, &cwd_tmp_path, &shell);
     let streaming_cap = cap.saturating_sub(512);
 
-    let mut child = std::process::Command::new(&shell)
-        .arg("-l")
-        .arg("-c")
-        .arg(&wrapped)
+    let mut cmd = shell_command(&shell, &wrapped);
+    configure_process(&mut cmd);
+    let mut child = cmd
         .current_dir(&exec_cwd)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
-        .process_group(0)
         .spawn()
         .with_context(|| format!("shell exec failed ({})", shell))?;
 
@@ -248,15 +306,13 @@ pub(super) fn exec_shell_bg(args: &serde_json::Value, cwd: &mut String) -> Resul
         .map(|p| resolve(p, cwd))
         .transpose()?
         .unwrap_or_else(|| PathBuf::from(cwd.as_str()));
-    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".into());
-    let mut child = std::process::Command::new(&shell)
-        .arg("-l")
-        .arg("-c")
-        .arg(command)
+    let shell = default_shell();
+    let mut cmd = shell_command(&shell, command);
+    configure_process(&mut cmd);
+    let mut child = cmd
         .current_dir(&exec_cwd)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
-        .process_group(0)
         .spawn()
         .with_context(|| format!("failed to spawn background command: {}", command))?;
     let pid = child.id();
@@ -351,10 +407,29 @@ pub(super) fn exec_shell_poll(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::shell_exec_wrapper;
     use std::path::Path;
+
+    #[test]
+    fn shell_command_preserves_exit_status_and_cwd() {
+        let path = std::env::temp_dir().join(format!("kaku-shell-test-{}.txt", std::process::id()));
+        let file = std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)
+            .unwrap();
+        drop(file);
+        let wrapped = shell_exec_wrapper("cd /; false", &path, "/bin/bash");
+        let status = super::shell_command("/bin/bash", &wrapped)
+            .status()
+            .unwrap();
+        let cwd = std::fs::read_to_string(&path).unwrap();
+        std::fs::remove_file(path).unwrap();
+        assert_eq!(status.code(), Some(1));
+        assert_eq!(cwd, "/");
+    }
 
     #[test]
     fn shell_exec_wrapper_uses_fish_syntax() {
@@ -377,5 +452,25 @@ mod tests {
                 "false; __kaku_rc=$?; printf '%s' \"$(pwd)\" > /tmp/kaku-cwd; exit $__kaku_rc"
             );
         }
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+    #[test]
+    fn powershell_reports_exit_status_and_changed_directory() {
+        let dir = tempfile::tempdir().unwrap();
+        let cwd_path = dir.path().join("cwd's file.txt");
+        std::fs::write(&cwd_path, "").unwrap();
+        let command = format!(
+            "Set-Location '{}'; cmd /c exit 7",
+            dir.path().to_string_lossy().replace("\u{27}", "''")
+        );
+        let wrapped = shell_exec_wrapper(&command, &cwd_path, &default_shell());
+        let status = shell_command(&default_shell(), &wrapped).status().unwrap();
+        assert_eq!(status.code(), Some(7));
+        let cwd = std::fs::read_to_string(&cwd_path).unwrap();
+        assert_eq!(Path::new(cwd.trim()), dir.path());
     }
 }

@@ -151,21 +151,32 @@ impl StagedUpdateLock {
             .truncate(false)
             .open(&path)
             .map_err(|e| anyhow!("failed to open staging lock {}: {}", path.display(), e))?;
-        use std::os::unix::io::AsRawFd;
-        let fd = file.as_raw_fd();
-        // SAFETY: fd is owned by `file` which outlives this call.
-        let rc = unsafe { libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB) };
-        if rc != 0 {
-            let err = std::io::Error::last_os_error();
-            if matches!(err.raw_os_error(), Some(libc::EWOULDBLOCK)) {
-                anyhow::bail!("another Kaku process is already staging an update");
+        #[cfg(unix)]
+        {
+            use std::os::unix::io::AsRawFd;
+            let fd = file.as_raw_fd();
+            // SAFETY: fd is owned by `file` which outlives this call.
+            let rc = unsafe { libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB) };
+            if rc != 0 {
+                let err = std::io::Error::last_os_error();
+                if matches!(err.raw_os_error(), Some(libc::EWOULDBLOCK)) {
+                    anyhow::bail!("another Kaku process is already staging an update");
+                }
+                return Err(anyhow!(
+                    "failed to acquire staging lock {}: {}",
+                    path.display(),
+                    err
+                ));
             }
-            return Err(anyhow!(
-                "failed to acquire staging lock {}: {}",
+        }
+        #[cfg(windows)]
+        file.try_lock().map_err(|err| {
+            anyhow!(
+                "failed to acquire staging lock {} (another process may be staging): {}",
                 path.display(),
                 err
-            ));
-        }
+            )
+        })?;
         Ok(Self { _file: file })
     }
 }
@@ -745,6 +756,7 @@ pub fn start_update_checker() {
         // permission dialog on first launch, rather than lazily when a
         // notification fires. This runs just after the first paint (see
         // paint_impl) so the init cost stays off the first-frame path.
+        #[cfg(target_os = "macos")]
         wezterm_toast_notification::macos_initialize();
 
         // Register callback so a notification click asks for confirmation

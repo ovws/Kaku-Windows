@@ -74,6 +74,8 @@ fn resolve_bundled_kaku_bin() -> anyhow::Result<PathBuf> {
     let current_exe = std::env::current_exe().context("resolve executable path")?;
     let bundled_kaku_name = if cfg!(windows) { "kaku.exe" } else { "kaku" };
     if let Some(parent) = current_exe.parent() {
+        #[cfg(windows)]
+        add_candidate(&mut candidates, parent.join("kaku-cli.exe"));
         add_candidate(&mut candidates, parent.join(bundled_kaku_name));
     }
 

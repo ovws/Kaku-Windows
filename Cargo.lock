@@ -3251,6 +3251,7 @@ version = "0.30.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e99fb7a497b1e3339bc746195567ed8d3e24945ecd636e3619d20b9de9e9149"
 dependencies = [
+ "cc",
  "pkg-config",
  "vcpkg",
 ]
@@ -3271,8 +3272,6 @@ dependencies = [
 [[package]]
 name = "libssh-rs-sys"
 version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01d528ea9ac190fa364ff12193da82222dfc645e7ab28666ae91493bd288a1a0"
 dependencies = [
  "cc",
  "libz-sys",

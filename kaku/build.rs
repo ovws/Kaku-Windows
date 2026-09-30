@@ -1,8 +1,7 @@
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
-    #[cfg(windows)]
-    {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
         use std::io::Write;
         use std::path::Path;
 
@@ -18,9 +17,9 @@ fn main() {
             rcfile,
             r#"
 #include <winres.h>
-1 RT_MANIFEST "{win}\\console.manifest"
+1 RT_MANIFEST "{win}/console.manifest"
 "#,
-            win = windows_dir.display().to_string().replace("\\", "\\\\"),
+            win = windows_dir.display().to_string().replace("\\", "/"),
         )
         .unwrap();
         drop(rcfile);

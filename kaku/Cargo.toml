@@ -31,7 +31,6 @@ portable-pty.workspace = true
 regex.workspace = true
 promise.workspace = true
 ratatui.workspace = true
-rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 shell-words.workspace = true
@@ -65,9 +64,16 @@ features = [
 ]
 workspace = true
 
-[target."cfg(windows)".build-dependencies]
+[build-dependencies]
 cc.workspace = true
 embed-resource.workspace = true
 
 [lints]
 workspace = true
+
+[target.'cfg(unix)'.dependencies.rusqlite]
+workspace = true
+
+[target.'cfg(windows)'.dependencies.rusqlite]
+workspace = true
+features = ["bundled"]

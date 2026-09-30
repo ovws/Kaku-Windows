@@ -320,3 +320,5 @@ zvariant = "4.0"
 # We use our own vendored cairo, which has minimal deps and should just
 # build via cargo.
 cairo-sys-rs = {path="deps/cairo", version="0.18.0"}
+
+libssh-rs-sys = { path = "deps/libssh-rs-sys" }

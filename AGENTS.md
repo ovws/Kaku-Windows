@@ -160,3 +160,23 @@ Releases that touch windowing, titlebar coloring, tab bar layout, or transparenc
 - Shared agent instructions belong in tracked docs. Personal overrides belong in ignored local files.
 - One-off review reports, scorecards, and diagnostic snapshots are evidence, not durable project docs. Extract stable rules or verification gates into `AGENTS.md`, `CLAUDE.md`, subsystem guides, scripts, or tests, then remove the transient report.
 - Do not hide user-visible behavior changes inside maintainability or cleanup patches. New UI, config fields, defaults, or workflow permissions should be split into their own change unless the maintainer explicitly approved that scope.
+
+## Windows builds
+
+Linux cross-build: install Rust 1.95.0, MinGW x64 C/C++, Python 3.11+,
+CMake, Perl and standard host C build tools, then run
+`bash scripts/build_windows_cross.sh`. The Python downloader uses the
+same pinned runtime asset manifest and SHA-256 values as the PowerShell
+downloader. Packaging requires a fresh `dist/Kaku-Windows-x64` directory.
+
+Build scripts must inspect `CARGO_CFG_TARGET_OS`, rather than host
+`#[cfg(windows)]`, when preparing target resources. Preserve Unix
+process groups and 0600 permissions; use Windows process-tree termination,
+PowerShell and the platform terminal on Windows. The staging lock uses
+a Windows file lock and retains Unix flock semantics.
+
+Windows packages use `Kaku.exe` for GUI, `kaku-cli.exe` for CLI and
+`kaku-gui.exe` as the CLI delegation target. Never package the CLI as
+`kaku.exe`: Windows treats it as the same filename as `Kaku.exe`.
+A successful Linux cross-build does not replace a native Windows startup
+smoke test before release.

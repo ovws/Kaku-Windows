@@ -41,7 +41,6 @@ remote = ["dep:kaku-remote"]
 [build-dependencies]
 anyhow.workspace = true
 
-[target.'cfg(windows)'.build-dependencies]
 cc.workspace = true
 embed-resource.workspace = true
 
