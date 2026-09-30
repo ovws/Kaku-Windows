@@ -72,7 +72,9 @@ jobs:
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
           Copy-Item (Join-Path $build 'kaku-gui.exe') (Join-Path $stage 'Kaku.exe')
-          Copy-Item (Join-Path $build 'kaku.exe') (Join-Path $stage 'kaku.exe')
+          # Windows filenames are case-insensitive; keep the CLI distinct from Kaku.exe.
+          Copy-Item (Join-Path $build 'kaku.exe') (Join-Path $stage 'kaku-cli.exe')
+          Copy-Item (Join-Path $build 'kaku-gui.exe') (Join-Path $stage 'kaku-gui.exe')
           Copy-Item (Join-Path $build 'k.exe') (Join-Path $stage 'k.exe')
           Copy-Item (Join-Path $build '*.dll') $stage
           Copy-Item (Join-Path $build 'OpenConsole.exe') $stage
@@ -87,7 +89,7 @@ jobs:
           Copy-Item 'LICENSE.md' $stage
           Copy-Item 'NOTICE.md' $stage
 
-          $required = @('Kaku.exe', 'kaku.exe', 'k.exe', 'kaku.lua', 'fonts/JetBrainsMono-Regular.ttf', 'fonts/SymbolsNerdFontMono-Regular.ttf', 'conpty.dll', 'OpenConsole.exe', 'libEGL.dll', 'libGLESv2.dll', 'mesa/opengl32.dll', 'notices/Microsoft-ConPTY.txt', 'notices/Mesa.txt')
+          $required = @('Kaku.exe', 'kaku-cli.exe', 'kaku-gui.exe', 'k.exe', 'kaku.lua', 'fonts/JetBrainsMono-Regular.ttf', 'fonts/SymbolsNerdFontMono-Regular.ttf', 'conpty.dll', 'OpenConsole.exe', 'libEGL.dll', 'libGLESv2.dll', 'mesa/opengl32.dll', 'notices/Microsoft-ConPTY.txt', 'notices/Mesa.txt')
           foreach ($path in $required) {
             if (-not (Test-Path (Join-Path $stage $path))) {
               throw "Windows package is missing required file: $path"
