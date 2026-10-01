@@ -45,7 +45,9 @@ Windows toast notifications are also disabled.
 `Kaku-Windows-<version>-Setup.exe` installs for the current user in
 `%LOCALAPPDATA%\Programs\Kaku` without administrator privileges. It adds a
 Start menu entry and an uninstall entry in Windows Settings. A desktop shortcut
-is optional. Close Kaku before installing an update.
+is optional. A single settings page lets you choose the directory and optional
+components, then install. The installer, uninstaller and shortcuts use the
+Kaku brand icon; the finish page offers to start Kaku. Close Kaku before installing an update.
 
 The default install keeps the CLI, AI helper, fonts, ConPTY and ANGLE. On NTFS,
 `Kaku.exe` and `kaku-gui.exe` share the same file data through a hard link, saving

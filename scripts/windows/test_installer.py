@@ -20,7 +20,7 @@ def uninstall(directory):
 with tempfile.TemporaryDirectory(prefix='kaku-installer-') as scratch:
     target = Path(scratch) / 'Kaku'
     install(target)
-    for name in ['Kaku.exe', 'kaku-gui.exe', 'kaku-cli.exe', 'k.exe', 'kaku.lua', 'conpty.dll', 'libEGL.dll', 'libGLESv2.dll']:
+    for name in ['Kaku.exe', 'kaku-gui.exe', 'kaku-cli.exe', 'k.exe', 'kaku.lua', 'conpty.dll', 'libEGL.dll', 'libGLESv2.dll', 'kaku.ico']:
         assert (target / name).is_file(), name
     assert os.path.samefile(target / 'Kaku.exe', target / 'kaku-gui.exe'), 'GUI hard link missing on NTFS'
     assert not (target / 'mesa/opengl32.dll').exists(), 'Mesa must be optional'

@@ -52,7 +52,8 @@ exe = out / f'Kaku-Windows-{args.version}-Setup.exe'
 template = (root / 'scripts/windows/installer.nsi.in').read_text()
 values = {'VERSION': args.version, 'OUTPUT': quote(exe), 'LICENSE': quote(stage / 'LICENSE.md'),
           'CORE_FILES': install_lines(core), 'MESA_FILES': install_lines(mesa),
-          'CONFIG': quote(stage / 'kaku.lua'), 'UNINSTALL_FILES': uninstall}
+          'CONFIG': quote(stage / 'kaku.lua'), 'UNINSTALL_FILES': uninstall,
+          'ICON': quote(root / 'assets/windows/kaku.ico')}
 for key, value in values.items():
     template = template.replace('@' + key + '@', value)
 source = out / 'installer.nsi'
