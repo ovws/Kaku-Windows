@@ -212,7 +212,7 @@ restore a native title bar or change the shipped retro tab style.
 
 ## Windows installer
 
-Build the per-user NSIS installer with `scripts/build_windows_installer.py`
+Build the per-user Inno Setup 7 installer with `scripts/build_windows_installer.py`
 from a verified portable staging directory. Keep CLI, AI helper, fonts,
 ConPTY and ANGLE in the required component. Mesa is an optional software
 OpenGL component; retain it in the complete portable ZIP. Deduplicate the
@@ -221,3 +221,11 @@ filesystem cannot create one. Preserve existing config on upgrade and delete
 only known payload files during uninstall; never recursively remove user files.
 Verify install, upgrade, CLI startup, optional Mesa and uninstall before release,
 and explicitly distinguish Wine smoke results from native Windows validation.
+
+Keep the Inno AppId stable. An in-place NSIS migration must preserve config,
+validate the legacy registry path and retire the legacy uninstaller only after
+installation succeeds. Never run the old NSIS uninstaller over new files.
+Installing into a different directory must preserve the separate legacy install.
+The workflow template lives under `scripts/windows/` until workflow permissions
+are available. Wine lifecycle tests are useful evidence, but do not replace
+native Windows checks or actual old-installer migration tests.

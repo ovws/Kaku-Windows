@@ -10,7 +10,7 @@ on:
       version:
         description: Installer version
         required: true
-        default: 0.21.0-6
+        default: 0.21.0-8
         type: string
 permissions:
   contents: read
@@ -23,12 +23,19 @@ jobs:
       INSTALLER_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      - name: Install NSIS
+      - name: Install verified Inno Setup 7 x64 compiler
         shell: pwsh
         run: |
-          choco install nsis --no-progress -y
-          if ($LASTEXITCODE -ne 0) { throw 'NSIS install failed' }
-          "${env:ProgramFiles(x86)}\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          New-Item -ItemType Directory tools | Out-Null
+          gh release download is-7_1_0 --repo jrsoftware/issrc --pattern innosetup-7.1.0-x64.exe --dir tools
+          if ($LASTEXITCODE -ne 0) { throw 'Compiler download failed' }
+          $expected = '0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f'
+          $actual = (Get-FileHash tools/innosetup-7.1.0-x64.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw 'Compiler checksum mismatch' }
+          $compilerDir = Join-Path $PWD 'tools/InnoSetup'
+          $process = Start-Process tools/innosetup-7.1.0-x64.exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$compilerDir") -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw 'Compiler installation failed' }
+          $compilerDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Download and verify portable package
         shell: pwsh
         run: |
