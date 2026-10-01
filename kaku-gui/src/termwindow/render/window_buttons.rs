@@ -377,7 +377,11 @@ impl crate::TermWindow {
         let font = self.fonts.title_font()?;
         let metrics = RenderMetrics::with_font_metrics(&font.metrics());
         let maximized = self.window_state.contains(window::WindowState::MAXIMIZED);
-        let background: config::RgbaColor = self.palette().background.into();
+        let background: config::RgbaColor = self
+            .get_active_pane_or_overlay()
+            .map(|pane| pane.palette().background)
+            .unwrap_or_else(|| self.palette().background)
+            .into();
         let (_, _, lightness, _) = background.to_hsla();
         let buttons = [
             IntegratedTitleButton::Hide,
