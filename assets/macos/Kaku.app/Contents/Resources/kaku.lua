@@ -276,6 +276,12 @@ end)()
 -- These are device pixels, not points, and that is deliberate: `pt` doubles
 -- the visible gutter on a 2x display, which is where the spacing was tuned.
 local function get_default_padding()
+  -- Windows already reserves a DPI-scaled strip for the caption buttons.
+  -- Avoid adding another top gutter below that strip.
+  if package.config:sub(1, 1) == '\\' then
+    local horizontal = low_resolution_screen and '26px' or '40px'
+    return { left = horizontal, right = horizontal, top = '0px', bottom = '0px' }
+  end
   if low_resolution_screen then
     return { left = '26px', right = '26px', top = '26px', bottom = '0px' }
   end
