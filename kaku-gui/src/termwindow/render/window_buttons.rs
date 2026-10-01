@@ -377,6 +377,8 @@ impl crate::TermWindow {
         let font = self.fonts.title_font()?;
         let metrics = RenderMetrics::with_font_metrics(&font.metrics());
         let maximized = self.window_state.contains(window::WindowState::MAXIMIZED);
+        let background: config::RgbaColor = self.palette().background.into();
+        let (_, _, lightness, _) = background.to_hsla();
         let buttons = [
             IntegratedTitleButton::Hide,
             IntegratedTitleButton::Maximize,
@@ -384,7 +386,16 @@ impl crate::TermWindow {
         ]
         .iter()
         .copied()
-        .map(|button| window_button_element(button, maximized, &font, &metrics, &self.config))
+        .map(|button| {
+            let colors = windows::window_button_colors(
+                lightness,
+                self.config.integrated_title_button_color.clone(),
+                button,
+            );
+            window_button_element(button, maximized, &font, &metrics, &self.config)
+                .colors(colors.colors)
+                .hover_colors(Some(colors.hover_colors))
+        })
         .collect();
         let row = Element::new(&font, ElementContent::Children(buttons)).float(Float::Right);
         let height = standalone_window_button_height(self.dimensions.dpi as f32) as f32;
