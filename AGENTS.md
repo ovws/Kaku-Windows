@@ -192,3 +192,10 @@ must pass on the merge PR, followed by a native Windows smoke test. Publish
 only from the validated Windows main branch using a unique Windows release
 tag; record the upstream SHA and smoke result. A stale Cargo.lock must be
 resolved explicitly and reviewed, not committed by the build workflow.
+
+Windows bundled config defaults to OpenGL: a native Windows user confirmed
+that switching from WebGPU resolves glyph-bottom clipping on every line.
+Preserve this Windows-only default when merging upstream. Do not change
+font size/line height to mask this rendering issue. Keep WebGPU explicitly
+selectable. This is a workaround, not proof of the WebGPU root cause; verify
+descenders, CJK text, scrolling, resize and mixed-DPI displays before release.
