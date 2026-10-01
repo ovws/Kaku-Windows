@@ -199,3 +199,7 @@ Preserve this Windows-only default when merging upstream. Do not change
 font size/line height to mask this rendering issue. Keep WebGPU explicitly
 selectable. This is a workaround, not proof of the WebGPU root cause; verify
 descenders, CJK text, scrolling, resize and mixed-DPI displays before release.
+
+Windows must set `quit_when_all_windows_are_closed = true` in the bundled
+config so exiting the last shell does not leave a hidden GUI process. Preserve
+macOS Dock residency. Verify last-shell exit and exit with other panes open.

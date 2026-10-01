@@ -4432,7 +4432,8 @@ config.send_composed_key_when_left_alt_is_pressed = false
 -- Keep Right Option available for composing locale/symbol characters.
 config.send_composed_key_when_right_alt_is_pressed = true
 config.native_macos_fullscreen_mode = true
-config.quit_when_all_windows_are_closed = false
+-- Windows should exit after the last shell/window closes; macOS keeps Dock reopen.
+config.quit_when_all_windows_are_closed = package.config:sub(1, 1) == '\\'
 
 -- ===== Key Bindings =====
 -- Wrapped in an IIFE so the ~50-entry table constructor gets its own function

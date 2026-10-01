@@ -112,6 +112,9 @@ Existing user configs that explicitly choose WebGPU should be changed to
 
 ## Current platform notes
 
+- Windows exits the GUI after the last shell/window closes, including when
+  PowerShell exits via `exit`. Other open panes and windows remain active.
+
 - `kaku init` and managed shell integration remain macOS-only in this first
   Windows port. The terminal starts PowerShell directly. `kaku-cli.exe` is
   the CLI companion, `kaku-gui.exe` is its GUI delegation target, and `k.exe`
