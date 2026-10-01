@@ -78,7 +78,7 @@ fn main() {
         }
         let version = if ci_tag.is_empty() {
             let mut cmd = std::process::Command::new("git");
-            cmd.args(&[
+            cmd.args([
                 "-c",
                 "core.abbrev=8",
                 "show",
