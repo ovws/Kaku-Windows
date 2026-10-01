@@ -4092,8 +4092,9 @@ config.use_resize_increments = false
 
 config.initial_cols = 110
 config.initial_rows = 22
--- Keep native macOS window shadow by default.
-config.window_decorations = "INTEGRATED_BUTTONS|RESIZE"
+-- Windows uses native caption buttons; macOS keeps integrated decorations.
+config.window_decorations = package.config:sub(1, 1) == '\\'
+  and "TITLE|RESIZE" or "INTEGRATED_BUTTONS|RESIZE"
 -- Window frame colors will be set after color_scheme is determined
 
 config.window_background_opacity = 1.0

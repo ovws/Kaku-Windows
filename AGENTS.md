@@ -203,3 +203,7 @@ descenders, CJK text, scrolling, resize and mixed-DPI displays before release.
 Windows must set `quit_when_all_windows_are_closed = true` in the bundled
 config so exiting the last shell does not leave a hidden GUI process. Preserve
 macOS Dock residency. Verify last-shell exit and exit with other panes open.
+
+Windows uses `TITLE|RESIZE` decorations for native caption buttons. Do not
+inherit macOS integrated-only chrome: it hides the native Windows close
+button. Preserve close confirmation and last-window exit behavior.

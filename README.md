@@ -112,6 +112,9 @@ Existing user configs that explicitly choose WebGPU should be changed to
 
 ## Current platform notes
 
+- Windows uses the native title bar with minimize, maximize and close buttons.
+  Closing a window keeps the existing running-task confirmation behavior.
+
 - Windows exits the GUI after the last shell/window closes, including when
   PowerShell exits via `exit`. Other open panes and windows remain active.
 
