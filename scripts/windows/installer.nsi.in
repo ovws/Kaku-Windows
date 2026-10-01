@@ -1,0 +1,117 @@
+Unicode true
+!include "MUI2.nsh"
+!include "LogicLib.nsh"
+!include "FileFunc.nsh"
+!include "Sections.nsh"
+Name "Kaku for Windows"
+OutFile "@OUTPUT@"
+InstallDir "$LOCALAPPDATA\Programs\Kaku"
+InstallDirRegKey HKCU "Software\KakuWindows" "InstallDir"
+RequestExecutionLevel user
+SetCompressor /SOLID lzma
+SetCompressorDictSize 32
+BrandingText "Kaku for Windows"
+!define MUI_ABORTWARNING
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE "@LICENSE@"
+!insertmacro MUI_PAGE_COMPONENTS
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+!define MUI_FINISHPAGE_RUN "$INSTDIR\Kaku.exe"
+!define MUI_FINISHPAGE_RUN_NOTCHECKED
+!insertmacro MUI_PAGE_FINISH
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_LANGUAGE "English"
+
+Section "Kaku (required)" SEC_CORE
+  SectionIn RO
+  ; Reject an upgrade while the existing GUI executable is in use.
+  IfFileExists "$INSTDIR\Kaku.exe" 0 ready
+  System::Call 'kernel32::CreateFileW(w "$INSTDIR\Kaku.exe", i 0x40000000, i 0, p 0, i 3, i 0, p 0) p .r0'
+  ${If} $0 == -1
+    MessageBox MB_OK|MB_ICONEXCLAMATION "Close Kaku before installing, and check that the installation folder is writable."
+    Abort
+  ${EndIf}
+  System::Call 'kernel32::CloseHandle(p r0)'
+ready:
+  @CORE_FILES@
+  SetOutPath "$INSTDIR"
+  ; Preserve an existing installation's personal bundled config on upgrade.
+  IfFileExists "$INSTDIR\kaku.lua" config_done
+  File "@CONFIG@"
+config_done:
+  ; Keep both required GUI names while storing their bytes only once on NTFS.
+  Delete "$INSTDIR\kaku-gui.exe"
+  System::Call 'kernel32::CreateHardLinkW(w "$INSTDIR\kaku-gui.exe", w "$INSTDIR\Kaku.exe", p 0) i .r0'
+  ${If} $0 == 0
+    ClearErrors
+    CopyFiles /SILENT "$INSTDIR\Kaku.exe" "$INSTDIR\kaku-gui.exe"
+    ${If} ${Errors}
+      MessageBox MB_OK|MB_ICONSTOP "Unable to create the GUI companion executable."
+      Abort
+    ${EndIf}
+  ${EndIf}
+  WriteUninstaller "$INSTDIR\Uninstall.exe"
+  CreateDirectory "$SMPROGRAMS\Kaku"
+  CreateShortcut "$SMPROGRAMS\Kaku\Kaku.lnk" "$INSTDIR\Kaku.exe"
+  CreateShortcut "$SMPROGRAMS\Kaku\Uninstall Kaku.lnk" "$INSTDIR\Uninstall.exe"
+  WriteRegStr HKCU "Software\KakuWindows" "InstallDir" "$INSTDIR"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows" "DisplayName" "Kaku for Windows"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows" "DisplayVersion" "@VERSION@"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows" "DisplayIcon" "$INSTDIR\Kaku.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows" "NoModify" 1
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows" "NoRepair" 1
+SectionEnd
+
+Section /o "Software OpenGL fallback (older GPUs / remote desktop)" SEC_MESA
+  @MESA_FILES@
+SectionEnd
+
+Section /o "Desktop shortcut" SEC_DESKTOP
+  CreateShortcut "$DESKTOP\Kaku.lnk" "$INSTDIR\Kaku.exe"
+SectionEnd
+
+!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CORE} "Terminal, CLI, AI helper, fonts and required runtime libraries. Installs for your account without administrator rights."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MESA} "Adds approximately 37 MB for software rendering when the GPU driver cannot provide OpenGL. Select this for older GPUs or remote desktop rendering problems."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DESKTOP} "Add a Kaku shortcut to your desktop."
+!insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+Section "Uninstall"
+  SetShellVarContext current
+  @UNINSTALL_FILES@
+  Delete "$INSTDIR\Uninstall.exe"
+  Delete "$DESKTOP\Kaku.lnk"
+  Delete "$SMPROGRAMS\Kaku\Kaku.lnk"
+  Delete "$SMPROGRAMS\Kaku\Uninstall Kaku.lnk"
+  RMDir "$SMPROGRAMS\Kaku"
+  ; No recursive deletion: retain kaku.lua and any user-created files.
+  RMDir "$INSTDIR"
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows"
+  DeleteRegKey HKCU "Software\KakuWindows"
+SectionEnd
+
+Function .onInit
+  SetShellVarContext current
+  ${GetParameters} $0
+  ClearErrors
+  ${GetOptions} $0 "/MESA" $1
+  ${IfNot} ${Errors}
+    SectionSetFlags ${SEC_MESA} ${SF_SELECTED}
+  ${EndIf}
+FunctionEnd
+
+Function un.onInit
+  SetShellVarContext current
+  IfFileExists "$INSTDIR\Kaku.exe" 0 ready
+  System::Call 'kernel32::CreateFileW(w "$INSTDIR\Kaku.exe", i 0x40000000, i 0, p 0, i 3, i 0, p 0) p .r0'
+  ${If} $0 == -1
+    MessageBox MB_OK|MB_ICONEXCLAMATION "Close Kaku before uninstalling, and check that the installation folder is writable."
+    Abort
+  ${EndIf}
+  System::Call 'kernel32::CloseHandle(p r0)'
+ready:
+FunctionEnd

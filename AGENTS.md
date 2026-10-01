@@ -209,3 +209,15 @@ Retro tabs use the standalone renderer in `render/window_buttons.rs`, even
 when the tab bar is hidden. Preserve its DPI-scaled top clearance, reverse
 hit-test order, close confirmation and last-window exit behavior. Do not
 restore a native title bar or change the shipped retro tab style.
+
+## Windows installer
+
+Build the per-user NSIS installer with `scripts/build_windows_installer.py`
+from a verified portable staging directory. Keep CLI, AI helper, fonts,
+ConPTY and ANGLE in the required component. Mesa is an optional software
+OpenGL component; retain it in the complete portable ZIP. Deduplicate the
+identical GUI executables with a hard link, falling back to a copy when the
+filesystem cannot create one. Preserve existing config on upgrade and delete
+only known payload files during uninstall; never recursively remove user files.
+Verify install, upgrade, CLI startup, optional Mesa and uninstall before release,
+and explicitly distinguish Wine smoke results from native Windows validation.
