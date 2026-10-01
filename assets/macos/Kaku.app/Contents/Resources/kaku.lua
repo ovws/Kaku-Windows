@@ -4092,9 +4092,12 @@ config.use_resize_increments = false
 
 config.initial_cols = 110
 config.initial_rows = 22
--- Windows uses native caption buttons; macOS keeps integrated decorations.
-config.window_decorations = package.config:sub(1, 1) == '\\'
-  and "TITLE|RESIZE" or "INTEGRATED_BUTTONS|RESIZE"
+-- Windows draws caption buttons without a native title/status bar.
+config.window_decorations = "INTEGRATED_BUTTONS|RESIZE"
+if package.config:sub(1, 1) == '\\' then
+  config.integrated_title_button_style = 'Windows'
+  config.integrated_title_button_alignment = 'Right'
+end
 -- Window frame colors will be set after color_scheme is determined
 
 config.window_background_opacity = 1.0

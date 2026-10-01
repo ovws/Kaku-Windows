@@ -112,7 +112,8 @@ Existing user configs that explicitly choose WebGPU should be changed to
 
 ## Current platform notes
 
-- Windows uses the native title bar with minimize, maximize and close buttons.
+- Windows uses borderless integrated minimize, maximize/restore and close
+  buttons at the top right. The blank area beside them can drag the window.
   Closing a window keeps the existing running-task confirmation behavior.
 
 - Windows exits the GUI after the last shell/window closes, including when

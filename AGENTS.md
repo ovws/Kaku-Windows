@@ -204,6 +204,8 @@ Windows must set `quit_when_all_windows_are_closed = true` in the bundled
 config so exiting the last shell does not leave a hidden GUI process. Preserve
 macOS Dock residency. Verify last-shell exit and exit with other panes open.
 
-Windows uses `TITLE|RESIZE` decorations for native caption buttons. Do not
-inherit macOS integrated-only chrome: it hides the native Windows close
-button. Preserve close confirmation and last-window exit behavior.
+Windows uses `INTEGRATED_BUTTONS|RESIZE` with Windows-style buttons.
+Retro tabs use the standalone renderer in `render/window_buttons.rs`, even
+when the tab bar is hidden. Preserve its DPI-scaled top clearance, reverse
+hit-test order, close confirmation and last-window exit behavior. Do not
+restore a native title bar or change the shipped retro tab style.
