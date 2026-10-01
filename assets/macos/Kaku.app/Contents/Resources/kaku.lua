@@ -4849,7 +4849,9 @@ if package.config:sub(1, 1) == '\\' then
   table.insert(config.font_dirs, wezterm.executable_dir .. '/fonts')
 end
 config.enable_scroll_bar = false
-config.front_end = 'WebGpu'
+-- Windows WebGPU can clip glyph descenders on some graphics drivers.
+-- Prefer the validated OpenGL path; --config can explicitly select WebGPU.
+config.front_end = package.config:sub(1, 1) == '\\' and 'OpenGL' or 'WebGpu'
 config.webgpu_power_preference = 'LowPower'
 config.animation_fps = 60
 config.max_fps = 60

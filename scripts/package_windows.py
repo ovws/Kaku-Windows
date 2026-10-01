@@ -11,9 +11,11 @@ root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
 parser.add_argument("--build-dir", type=Path,
                     default=root / "target/x86_64-pc-windows-gnu/release-opt")
+parser.add_argument("--dist-dir", type=Path, default=root / "dist",
+                    help="Output directory; use a fresh directory to preserve prior packages")
 args = parser.parse_args()
 build = args.build_dir.resolve()
-dist = root / "dist"
+dist = args.dist_dir.resolve()
 stage = dist / "Kaku-Windows-x64"
 # Refuse stale staging files rather than mix two builds.
 if stage.exists():
