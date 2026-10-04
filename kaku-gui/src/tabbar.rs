@@ -109,7 +109,10 @@ fn call_format_tab_titles_batch_with_lua(
     for tab in tab_info {
         // SSH tabs skip Lua; caller will use build_default_title fallback.
         if let Some(pane) = &tab.active_pane {
-            if tab.tab_title.is_empty() && ssh_destination_for_pane(pane).is_some() {
+            if tab.tab_title.is_empty()
+                && !config.tab_title_use_pane_title
+                && ssh_destination_for_pane(pane).is_some()
+            {
                 results.push(None);
                 continue;
             }
@@ -323,7 +326,7 @@ fn compute_tab_title_from_precomputed(
     precomputed: Option<TitleText>,
 ) -> TitleText {
     if let Some(pane) = &tab.active_pane {
-        if tab.tab_title.is_empty() {
+        if tab.tab_title.is_empty() && !config.tab_title_use_pane_title {
             if let Some(ssh_host) = ssh_destination_for_pane(pane) {
                 return build_default_title(tab, config, &ssh_title(&ssh_host), false, true);
             }
@@ -335,6 +338,8 @@ fn compute_tab_title_from_precomputed(
             if let Some(pane) = &tab.active_pane {
                 let title = if !tab.tab_title.is_empty() {
                     tab.tab_title.clone()
+                } else if config.tab_title_use_pane_title && !pane.title.is_empty() {
+                    pane.title.clone()
                 } else if let Some(multi) =
                     tab_multi_pane_title(tab.tab_id, config.tab_title_show_foreground_process)
                 {
@@ -381,7 +386,11 @@ pub fn compute_tab_plain_title(tab: &TabInformation) -> String {
     }
 
     if let Some(pane) = &tab.active_pane {
-        let include_foreground_process = config::configuration().tab_title_show_foreground_process;
+        let config = config::configuration();
+        if config.tab_title_use_pane_title && !pane.title.is_empty() {
+            return pane.title.clone();
+        }
+        let include_foreground_process = config.tab_title_show_foreground_process;
         return choose_plain_tab_title(
             ssh_destination_for_pane(pane),
             tab_multi_pane_title(tab.tab_id, include_foreground_process),

@@ -233,7 +233,13 @@ into showing the foreground command alongside the path:
 config.tab_bar_at_bottom = false                   -- move to top
 config.tab_title_show_basename_only = true         -- show "dirname" instead of "parent/dirname"
 config.tab_title_show_foreground_process = true    -- show "dirname·codex" while commands run
+config.tab_title_use_pane_title = true             -- show application titles set via OSC 0/2
 ```
+
+With `tab_title_use_pane_title`, the active pane's title also supplies the
+window title and the title of a split tab. Explicit tab renames still take
+precedence. Shell prompt hooks may overwrite application titles after a
+command exits; this is independent of OSC support.
 
 The trailing cell stays blank until a pane wants your attention, then shows an
 amber dot. Background tabs that emit BEL use it, and so does any program that
