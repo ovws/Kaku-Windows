@@ -3383,6 +3383,8 @@ pub enum ImePreeditRendering {
     /// IME preedit is rendered by WezTerm itself
     #[default]
     Builtin,
+    /// IME preedit shifts the rest of the row for display only.
+    BuiltinInsert,
     /// IME preedit is rendered by system
     System,
 }

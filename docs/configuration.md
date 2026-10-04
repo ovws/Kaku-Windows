@@ -402,3 +402,17 @@ Kaku uses WezTerm's configuration system. Any WezTerm config option works in `ka
 
 - [WezTerm config options](https://wezfurlong.org/wezterm/config/)
 - [WezTerm Lua API](https://wezfurlong.org/wezterm/config/lua/)
+
+### IME composition
+
+To keep the character after the cursor visible when composing Korean,
+Japanese or Chinese text in the middle of a line:
+
+```lua
+config.ime_preedit_rendering = 'BuiltinInsert'
+```
+
+This shifts the remaining cells of the current row for display only and clips
+at the pane edge. The terminal buffer and bytes sent to the application stay
+unchanged. The default `Builtin` mode overlays the preedit; `System` does not
+select native preedit rendering on macOS.
