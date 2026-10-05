@@ -1745,7 +1745,7 @@ impl KeyEvent {
                 Char('\x7f') if flags.contains(KittyKeyboardFlags::DISAMBIGUATE_ESCAPE_CODES) => {}
                 Char('\x7f') => return '\x08'.to_string(),
                 // With DISAMBIGUATE_ESCAPE_CODES, ESC must not be sent as a
-                // raw \x1b byte — the entire point of the flag is to eliminate
+                // raw \x1b byte, since the entire point of the flag is to eliminate
                 // that ambiguity.  Let it fall through to the CSI-u path below
                 // which will produce \x1b[27;1u as required by the spec.
                 // https://sw.kovidgoyal.net/kitty/keyboard-protocol/#disambiguate
