@@ -233,7 +233,13 @@ into showing the foreground command alongside the path:
 config.tab_bar_at_bottom = false                   -- move to top
 config.tab_title_show_basename_only = true         -- show "dirname" instead of "parent/dirname"
 config.tab_title_show_foreground_process = true    -- show "dirname·codex" while commands run
+config.tab_title_use_pane_title = true             -- show application titles set via OSC 0/2
 ```
+
+With `tab_title_use_pane_title`, the active pane's title also supplies the
+window title and the title of a split tab. Explicit tab renames still take
+precedence. Shell prompt hooks may overwrite application titles after a
+command exits; this is independent of OSC support.
 
 The trailing cell stays blank until a pane wants your attention, then shows an
 amber dot. Background tabs that emit BEL use it, and so does any program that
@@ -396,3 +402,17 @@ Kaku uses WezTerm's configuration system. Any WezTerm config option works in `ka
 
 - [WezTerm config options](https://wezfurlong.org/wezterm/config/)
 - [WezTerm Lua API](https://wezfurlong.org/wezterm/config/lua/)
+
+### IME composition
+
+To keep the character after the cursor visible when composing Korean,
+Japanese or Chinese text in the middle of a line:
+
+```lua
+config.ime_preedit_rendering = 'BuiltinInsert'
+```
+
+This shifts the remaining cells of the current row for display only and clips
+at the pane edge. The terminal buffer and bytes sent to the application stay
+unchanged. The default `Builtin` mode overlays the preedit; `System` does not
+select native preedit rendering on macOS.

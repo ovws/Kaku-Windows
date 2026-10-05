@@ -603,6 +603,7 @@ impl crate::TermWindow {
                         pane_is_active: pane_is_active_for_cursor,
                         config_generation: self.term_window.config.generation(),
                         shape_generation: self.term_window.shape_generation,
+                        num_cols: self.dims.cols,
                         quad_generation: self.term_window.quad_generation,
                         composing: composing.clone(),
                         selection: selrange.clone(),
@@ -648,6 +649,7 @@ impl crate::TermWindow {
                     let shape_key = LineToEleShapeCacheKey {
                         shape_hash,
                         shape_generation: quad_key.shape_generation,
+                        num_cols: self.dims.cols,
                         window_is_transparent: self.window_is_transparent,
                         composing: if self.cursor.y == stable_row && pane_is_active_for_cursor {
                             if let DeadKeyStatus::Composing(composing) =

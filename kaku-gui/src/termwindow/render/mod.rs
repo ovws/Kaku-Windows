@@ -58,6 +58,7 @@ pub struct CachedLineState {
 
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub struct LineQuadCacheKey {
+    pub num_cols: usize,
     pub config_generation: usize,
     pub shape_generation: usize,
     pub quad_generation: usize,
@@ -88,6 +89,7 @@ pub struct LineQuadCacheValue {
 }
 
 pub struct LineToElementParams<'a> {
+    pub num_cols: usize,
     pub line: &'a Line,
     pub config: &'a ConfigHandle,
     pub palette: &'a ColorPalette,
@@ -100,6 +102,7 @@ pub struct LineToElementParams<'a> {
 pub struct LineToEleShapeCacheKey {
     pub shape_hash: [u8; 16],
     pub composing: Option<(usize, String)>,
+    pub num_cols: usize,
     pub shape_generation: usize,
     pub window_is_transparent: bool,
 }
