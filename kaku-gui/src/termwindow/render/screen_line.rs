@@ -29,6 +29,19 @@ fn composition_line(
     if rendering == ImePreeditRendering::BuiltinInsert {
         let preedit =
             wezterm_term::Line::from_text(composing, &CellAttributes::blank(), seqno, None);
+        if !composing.is_empty() && cursor_x < num_cols {
+            // A cursor can address the continuation cell of a wide glyph.
+            // Blank that glyph before inserting so it cannot hide the preedit.
+            let split_glyph = line
+                .visible_cells()
+                .find(|cell| {
+                    cell.cell_index() < cursor_x && cell.cell_index() + cell.width() > cursor_x
+                })
+                .map(|cell| (cell.cell_index(), cell.attrs().clone()));
+            if let Some((x, attrs)) = split_glyph {
+                line.set_cell(x, termwiz::cell::Cell::blank_with_attrs(attrs), seqno);
+            }
+        }
         let mut x = cursor_x;
         for cell in preedit.visible_cells() {
             if x >= num_cols {
@@ -993,6 +1006,37 @@ impl crate::TermWindow {
 #[cfg(test)]
 mod composition_tests {
     use super::*;
+
+    #[test]
+    fn empty_or_out_of_bounds_preedit_keeps_a_wide_character() {
+        let original = wezterm_term::Line::from("한ab");
+        for (cursor, preedit) in [(1, ""), (4, "x")] {
+            let rendered = composition_line(
+                &original,
+                cursor,
+                preedit,
+                4,
+                ImePreeditRendering::BuiltinInsert,
+            );
+            assert_eq!(rendered.as_str(), "한ab");
+        }
+    }
+
+    #[test]
+    fn insert_preedit_handles_a_wide_character_continuation() {
+        let original = wezterm_term::Line::from("한ab");
+        for (preedit, columns, expected) in [("x", 5, " x ab"), ("文", 6, " 文 ab")] {
+            let rendered = composition_line(
+                &original,
+                1,
+                preedit,
+                columns,
+                ImePreeditRendering::BuiltinInsert,
+            );
+            assert_eq!(rendered.as_str(), expected);
+            assert_eq!(original.as_str(), "한ab");
+        }
+    }
 
     #[test]
     fn insert_preedit_preserves_korean_suffix_and_terminal_buffer() {
