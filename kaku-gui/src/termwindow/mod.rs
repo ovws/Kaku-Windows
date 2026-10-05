@@ -1984,10 +1984,22 @@ impl TermWindow {
             WindowEvent::PerformKeyAssignmentForPane { action, pane_id } => {
                 let pane_id = PaneId::new(pane_id);
                 let mux = Mux::get();
-                let belongs_to_window = mux
-                    .resolve_pane_id(pane_id)
-                    .is_some_and(|(_, window_id, _)| window_id == self.mux_window_id);
-                if !belongs_to_window {
+                let tab_id = match mux.resolve_pane_id(pane_id) {
+                    Some((_, window_id, tab_id)) if window_id == self.mux_window_id => tab_id,
+                    _ => return Ok(true),
+                };
+
+                // Close the menu's tab in place, like middle-click. Focusing it
+                // first would leave the user on its neighbor instead of the tab
+                // they were on.
+                if let KeyAssignment::CloseCurrentTab { confirm } = action {
+                    let tab_idx = mux
+                        .get_window(self.mux_window_id)
+                        .and_then(|window| window.idx_by_id(tab_id));
+                    if let Some(tab_idx) = tab_idx {
+                        self.close_specific_tab(tab_idx, confirm);
+                        window.invalidate();
+                    }
                     return Ok(true);
                 }
 

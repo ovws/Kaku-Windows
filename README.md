@@ -43,7 +43,7 @@ Open Kaku to set up shell integration. Missing optional tools can be installed t
 
 - **Ready to use**: JetBrains Mono, automatic dark and light themes, copy on select, and familiar Mac shortcuts.
 - **Tabs and panes**: Split your workspace, find a pane with Tab Navigator, and restore windows, panes, and working directories when you reopen Kaku.
-- **Right-click menu**: Paste, search, open AI chat, and split or close the clicked pane without remembering shortcuts.
+- **Right-click menu**: Paste, search, open AI chat, split or close the clicked pane, and open or close tabs without remembering shortcuts.
 - **Clickable links**: `Cmd + Click` opens URLs and file paths; URLs automatically wrapped by the terminal keep their full address.
 - **AI-friendly**: Use your coding tools alongside an optional assistant for command suggestions and chat. Configure your own AI service with `kaku ai`.
 - **Shell tools**: Built-in zsh completion, syntax highlighting, and directory jumping, with shortcuts for optional Lazygit and Yazi installations.
