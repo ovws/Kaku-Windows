@@ -88,12 +88,25 @@ fn has_format_tab_title_callback(lua: &mlua::Lua) -> mlua::Result<bool> {
     Ok(matches!(tbl, mlua::Value::Table(_)))
 }
 
+/// The title a fresh terminal reports before any program sets one through
+/// OSC 0/2 (`term/src/terminalstate/mod.rs`). It is a placeholder, not a title
+/// an application chose, so `tab_title_use_pane_title` must fall through it.
+const DEFAULT_PANE_TITLE: &str = "kaku";
+
+/// The pane title an application set through OSC 0/2, when the user opted into
+/// showing it with `tab_title_use_pane_title`.
+fn app_pane_title<'a>(config: &ConfigHandle, pane: &'a PaneInformation) -> Option<&'a str> {
+    (config.tab_title_use_pane_title && !pane.title.is_empty() && pane.title != DEFAULT_PANE_TITLE)
+        .then_some(pane.title.as_str())
+}
+
 fn ssh_destination_for_default_title(
     tab: &TabInformation,
     config: &ConfigHandle,
 ) -> Option<String> {
-    if tab.tab_title.is_empty() && !config.tab_title_use_pane_title {
-        tab.active_pane.as_ref().and_then(ssh_destination_for_pane)
+    let pane = tab.active_pane.as_ref()?;
+    if tab.tab_title.is_empty() && app_pane_title(config, pane).is_none() {
+        ssh_destination_for_pane(pane)
     } else {
         None
     }
@@ -340,8 +353,8 @@ fn compute_tab_title_from_precomputed(
             if let Some(pane) = &tab.active_pane {
                 let title = if !tab.tab_title.is_empty() {
                     tab.tab_title.clone()
-                } else if config.tab_title_use_pane_title && !pane.title.is_empty() {
-                    pane.title.clone()
+                } else if let Some(app_title) = app_pane_title(config, pane) {
+                    app_title.to_string()
                 } else if let Some(multi) =
                     tab_multi_pane_title(tab.tab_id, config.tab_title_show_foreground_process)
                 {
@@ -389,8 +402,8 @@ pub fn compute_tab_plain_title(tab: &TabInformation) -> String {
 
     if let Some(pane) = &tab.active_pane {
         let config = config::configuration();
-        if config.tab_title_use_pane_title && !pane.title.is_empty() {
-            return pane.title.clone();
+        if let Some(app_title) = app_pane_title(&config, pane) {
+            return app_title.to_string();
         }
         let include_foreground_process = config.tab_title_show_foreground_process;
         return choose_plain_tab_title(
@@ -415,6 +428,9 @@ pub(crate) fn compute_pane_plain_title(
     pane: &PaneInformation,
     include_foreground_process: bool,
 ) -> String {
+    if let Some(app_title) = app_pane_title(&config::configuration(), pane) {
+        return app_title.to_string();
+    }
     ssh_destination_for_pane(pane)
         .or_else(|| pane_context_title(pane, include_foreground_process))
         .unwrap_or_else(|| pane.title.clone())
@@ -1411,7 +1427,6 @@ mod test {
             user_vars,
             progress: Progress::None,
         };
-        tab.active_pane = Some(pane.clone());
         for enabled in [false, true] {
             std::fs::write(
                 config_file.path(),
@@ -1429,37 +1444,47 @@ return {{ use_fancy_tab_bar = false, show_new_tab_button_in_tab_bar = false,
             config::reload();
             let config = config::configuration_result()?;
             assert_eq!(config.tab_title_use_pane_title, enabled);
-            let tabs = [tab.clone()];
-            let panes = [pane.clone()];
-            let normal = TabBarState::new(80, None, &tabs, &panes, false, None, &config, "", "");
-            let normal_tab = normal
-                .items
-                .iter()
-                .find(|entry| matches!(entry.item, TabBarItem::Tab { .. }))
-                .expect("tab entry");
-            let hovered = TabBarState::new(
-                80,
-                Some(normal_tab.x),
-                &tabs,
-                &panes,
-                false,
-                None,
-                &config,
-                "",
-                "",
-            );
-            let hovered_tab = hovered
-                .items
-                .iter()
-                .find(|entry| matches!(entry.item, TabBarItem::Tab { .. }))
-                .expect("hovered tab entry");
-            if enabled {
-                assert_eq!(normal_tab.title.as_str(), " Lua title ");
-            } else {
-                assert!(normal_tab.title.as_str().contains("test-host"));
+            // The second title is the terminal default: no program has set one
+            // yet, so the opt-in has nothing to show and SSH stays in charge (#566).
+            for (pane_title, app_title_set) in
+                [("application-title", true), (DEFAULT_PANE_TITLE, false)]
+            {
+                let mut pane = pane.clone();
+                pane.title = pane_title.to_string();
+                tab.active_pane = Some(pane.clone());
+                let tabs = [tab.clone()];
+                let panes = [pane.clone()];
+                let normal =
+                    TabBarState::new(80, None, &tabs, &panes, false, None, &config, "", "");
+                let normal_tab = normal
+                    .items
+                    .iter()
+                    .find(|entry| matches!(entry.item, TabBarItem::Tab { .. }))
+                    .expect("tab entry");
+                let hovered = TabBarState::new(
+                    80,
+                    Some(normal_tab.x),
+                    &tabs,
+                    &panes,
+                    false,
+                    None,
+                    &config,
+                    "",
+                    "",
+                );
+                let hovered_tab = hovered
+                    .items
+                    .iter()
+                    .find(|entry| matches!(entry.item, TabBarItem::Tab { .. }))
+                    .expect("hovered tab entry");
+                if enabled && app_title_set {
+                    assert_eq!(normal_tab.title.as_str(), " Lua title ");
+                } else {
+                    assert!(normal_tab.title.as_str().contains("test-host"));
+                }
+                assert_eq!(normal_tab.title.as_str(), hovered_tab.title.as_str());
+                assert_eq!(normal_tab.width, hovered_tab.width);
             }
-            assert_eq!(normal_tab.title.as_str(), hovered_tab.title.as_str());
-            assert_eq!(normal_tab.width, hovered_tab.width);
         }
         Ok(())
     }

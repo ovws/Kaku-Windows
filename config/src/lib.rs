@@ -1406,6 +1406,16 @@ assert(title_text() ~= 'test-title')
 cfg.tab_title_use_pane_title = true
 p1.title = ''
 assert(title_text() ~= '')
+cfg.tab_title_use_pane_title = false
+local fallback = title_text()
+cfg.tab_title_use_pane_title = true
+p1.title = 'kaku'
+assert(title_text() == fallback)
+tab.panes = {p1, p2}
+cfg.tab_title_use_pane_title = false
+local split_fallback = title_text()
+cfg.tab_title_use_pane_title = true
+assert(title_text() == split_fallback)
 "#).exec()?;
         Ok(())
     }

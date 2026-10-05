@@ -3137,7 +3137,11 @@ local function tab_display_title(tab, effective_config)
   local text = tab and tab.tab_title or ''
 
   if text == '' and active_pane and effective_config and effective_config.tab_title_use_pane_title then
-    text = active_pane.title or ''
+    local pane_title = active_pane.title or ''
+    -- 'kaku' is the terminal's default title, not one an application set.
+    if pane_title ~= 'kaku' then
+      text = pane_title
+    end
   end
 
   if text == '' then
@@ -3222,7 +3226,10 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, effective_config, hove
   end
 
   -- Multi-pane path: render each pane's cwd, active segment highlighted
-  if #own_panes > 1 and tab.tab_title == '' and not (effective_config and effective_config.tab_title_use_pane_title) then
+  local app_pane_title = tab.active_pane and tab.active_pane.title or ''
+  local shows_app_title = effective_config and effective_config.tab_title_use_pane_title
+    and app_pane_title ~= '' and app_pane_title ~= 'kaku'
+  if #own_panes > 1 and tab.tab_title == '' and not shows_app_title then
     local basename_only = effective_config and effective_config.tab_title_show_basename_only
     local show_process = effective_config and effective_config.tab_title_show_foreground_process == true
     local pane_titles = {}
