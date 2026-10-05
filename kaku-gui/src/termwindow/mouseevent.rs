@@ -242,6 +242,13 @@ fn bottom_tab_bar_touch_y(
     (y >= band_top && y < bar_top).then_some(bar_top)
 }
 
+/// Only a plain left press (a tap) is widened. A middle press there is a
+/// paste into the last row and a right press is its context menu; neither
+/// may turn into closing or opening a tab.
+fn press_takes_touch_extension(kind: &WMEK, modifiers: window::Modifiers) -> bool {
+    matches!(kind, WMEK::Press(MousePress::Left)) && modifiers.remove_positional_mods().is_empty()
+}
+
 /// Only tabs and the new-tab button take the widened target. Status and
 /// empty bar regions start a window drag, which must never begin from inside
 /// the terminal.
@@ -692,9 +699,11 @@ impl super::TermWindow {
             .cloned()
     }
 
-    /// Resolves a plain press just above a bottom tab bar to the tab under it.
-    /// Hover, wheel, modified clicks and gestures already owned by the
-    /// terminal keep their normal routing.
+    /// Resolves a plain left press (a tap) just above a bottom tab bar to the
+    /// tab under it. Middle and right presses stay with the terminal, so a
+    /// middle-click paste on the last row can never close a tab. Hover, wheel,
+    /// modified clicks and gestures already owned by the terminal keep their
+    /// normal routing.
     fn resolve_bottom_tab_bar_touch_item(
         &self,
         event: &MouseEvent,
@@ -702,8 +711,7 @@ impl super::TermWindow {
     ) -> Option<UIItem> {
         if !self.show_tab_bar
             || !self.config.tab_bar_at_bottom
-            || !matches!(event.kind, WMEK::Press(_))
-            || !event.modifiers.remove_positional_mods().is_empty()
+            || !press_takes_touch_extension(&event.kind, event.modifiers)
             || self.mouse.current_mouse_capture.is_some()
         {
             return None;
@@ -2409,14 +2417,14 @@ fn wmek_to_tmek_and_button(event: &MouseEvent) -> (TMEK, TMB) {
 mod tests {
     use super::{
         bottom_tab_bar_touch_y, manual_drag_window_top_left, mouse_dispatch_target,
-        option_click_cursor_bytes, should_bypass_wheel_assignment_in_alt,
-        should_preserve_tmux_bypass_reporting, should_show_terminal_context_menu,
-        should_use_manual_window_drag, should_use_native_maximized_window_drag,
-        should_zoom_title_area, tab_bar_item_starts_window_drag,
-        tab_bar_item_takes_touch_extension, tab_context_menu_actions,
-        terminal_context_menu_actions, title_area_double_click_zoom_action,
-        wheel_during_terminal_selection_action, MouseDispatchTarget, OptionClickRowInfo,
-        SelectionDragWheelAction, TitleAreaZoomAction,
+        option_click_cursor_bytes, press_takes_touch_extension,
+        should_bypass_wheel_assignment_in_alt, should_preserve_tmux_bypass_reporting,
+        should_show_terminal_context_menu, should_use_manual_window_drag,
+        should_use_native_maximized_window_drag, should_zoom_title_area,
+        tab_bar_item_starts_window_drag, tab_bar_item_takes_touch_extension,
+        tab_context_menu_actions, terminal_context_menu_actions,
+        title_area_double_click_zoom_action, wheel_during_terminal_selection_action,
+        MouseDispatchTarget, OptionClickRowInfo, SelectionDragWheelAction, TitleAreaZoomAction,
     };
     use crate::tabbar::TabBarItem;
     use crate::termwindow::MouseCapture;
@@ -2833,6 +2841,32 @@ mod tests {
         // Maximized: no padding strip, only the extension remains.
         assert_eq!(bottom_tab_bar_touch_y(976, 1000, 1000, 24), Some(1000));
         assert_eq!(bottom_tab_bar_touch_y(975, 1000, 1000, 24), None);
+    }
+
+    #[test]
+    fn only_a_plain_left_press_takes_the_touch_extension() {
+        assert!(press_takes_touch_extension(
+            &MouseEventKind::Press(MousePress::Left),
+            Modifiers::NONE
+        ));
+        assert!(press_takes_touch_extension(
+            &MouseEventKind::Press(MousePress::Left),
+            Modifiers::ENHANCED_KEY
+        ));
+        for press in [MousePress::Middle, MousePress::Right] {
+            assert!(!press_takes_touch_extension(
+                &MouseEventKind::Press(press),
+                Modifiers::NONE
+            ));
+        }
+        assert!(!press_takes_touch_extension(
+            &MouseEventKind::Press(MousePress::Left),
+            Modifiers::SUPER
+        ));
+        assert!(!press_takes_touch_extension(
+            &MouseEventKind::Move,
+            Modifiers::NONE
+        ));
     }
 
     #[test]
