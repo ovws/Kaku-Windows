@@ -379,6 +379,20 @@ impl crate::TermWindow {
             })
     }
 
+    /// Pixel y of the terminal grid's top edge, before top padding: the OS
+    /// top inset plus a top tab bar when one is shown. Pane backgrounds,
+    /// split lines and mouse hit-testing take their origin from here so they
+    /// match where text is drawn; a pane background that skipped the inset
+    /// under a top tab bar sat above its split line (#562).
+    pub fn terminal_first_row_offset(&self) -> f32 {
+        let top_tab_bar_height = if self.show_tab_bar && !self.config.tab_bar_at_bottom {
+            self.tab_bar_pixel_height().unwrap_or(0.)
+        } else {
+            0.
+        };
+        top_tab_bar_height + self.get_os_border().top.get() as f32
+    }
+
     pub fn padding_left_top(&self) -> (f32, f32) {
         let h_context = DimensionContext {
             dpi: self.dimensions.dpi as f32,

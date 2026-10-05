@@ -792,11 +792,7 @@ impl super::TermWindow {
 
         let border = self.get_os_border();
 
-        let first_line_offset = if self.show_tab_bar && !self.config.tab_bar_at_bottom {
-            self.tab_bar_pixel_height().unwrap_or(0.) as isize
-        } else {
-            border.top.get() as isize
-        };
+        let first_line_offset = self.terminal_first_row_offset() as isize;
 
         let (padding_left, padding_top) = self.padding_left_top();
         let terminal_origin_y = first_line_offset + padding_top as isize;
@@ -1313,6 +1309,22 @@ impl super::TermWindow {
     ) {
         match item.item_type {
             UIItemType::Split(split) => {
+                // Measure top|bottom drags against the drawn line rather than
+                // the floored grid row; with an even row gutter the line sits on
+                // a row edge (#562).
+                let (_, padding_top) = self.padding_left_top();
+                let origin = self.terminal_first_row_offset() + padding_top;
+                let rows_from_origin =
+                    (event.coords.y as f32 - origin) / self.render_metrics.cell_size.height as f32;
+                let row_center = crate::termwindow::render::split::split_row_center_offset(
+                    self.config.split_pane_gap.max(1) as usize,
+                );
+                let y = if y < 0 {
+                    y
+                } else {
+                    crate::termwindow::render::split::split_drag_row(rows_from_origin, row_center)
+                        .max(0)
+                };
                 self.drag_split(item, split, start_event, x, y, context);
             }
             UIItemType::ScrollThumb => {
