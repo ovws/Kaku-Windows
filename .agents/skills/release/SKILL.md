@@ -106,14 +106,14 @@ When a release fixes a bug outside this list, add the reproduction here so the n
 | Config release readiness | `./scripts/check_config_release_readiness.sh` |
 | Full preflight | `./scripts/release.sh --dry-run` |
 
-`release.sh` runs fmt-check, check, and test again as `stage:checks` after preflight, so it is fine to skip them locally if the dry-run passes.
+`release.sh --dry-run` stops after preflight and does not run source checks. The normal release reuses successful CI Checks for the current HEAD; otherwise `stage:checks` runs the local checks below, as described in `AGENTS.md`. A passing dry-run alone is not source-check evidence.
 
 ## Stage map
 
 `./scripts/release.sh` runs these stages in order. Each is timed and labeled `[stage:<name>]`.
 
 1. **preflight**: clean git on `main` in sync with `origin/main`, version consistency, gh auth, release notes, config, latest `Build Validation` workflow run on `main` green (an in-progress run only warns), profile, signing identity, notarization creds.
-2. **stage:checks**: `make fmt-check && make check && make test`. Set `RUN_CLIPPY=1` to add clippy. Set `SKIP_TESTS=1` to skip tests (avoid).
+2. **stage:checks**: reuse successful CI Checks on the current HEAD, or run `make fmt-check && make check && make test` locally. `RUN_CLIPPY=1` adds local clippy in either case. `SKIP_TESTS=1` skips local tests (avoid).
 3. **stage:build**: `./scripts/build.sh`, `PROFILE=release-opt`, `BUILD_ARCH=universal`. Output: `dist/Kaku.app`, `dist/Kaku.dmg`, `dist/kaku_for_update.zip`, `dist/kaku_for_update.zip.sha256`.
 4. **stage:notarize**: `./scripts/notarize.sh`. Tries rcodesign first; falls back to notarytool if rcodesign fails and a notarytool profile exists.
 5. **stage:tag**: `git tag -a V<version> -m 'Release V<version>'` then `git push origin V<version>`. Idempotent: reuses an existing tag at HEAD instead of dying.
