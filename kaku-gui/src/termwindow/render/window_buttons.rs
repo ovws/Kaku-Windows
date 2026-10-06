@@ -351,3 +351,93 @@ pub fn window_button_element(
 
     element
 }
+
+/// Retro tabs cannot render vector caption buttons. Reserve a separate strip
+/// on Windows without bringing back the native title bar or changing tab style.
+pub(crate) fn standalone_window_buttons(config: &config::Config, fullscreen: bool) -> bool {
+    cfg!(windows)
+        && !fullscreen
+        && !config.use_fancy_tab_bar
+        && config
+            .window_decorations
+            .contains(window::WindowDecorations::INTEGRATED_BUTTONS)
+        && config.integrated_title_button_style == Style::Windows
+}
+
+pub(crate) fn standalone_window_button_height(dpi: f32) -> usize {
+    // 10px glyph + 10px top/bottom padding, scaled with monitor DPI.
+    ((dpi.max(1.0) / 96.0) * 30.0).ceil() as usize
+}
+
+impl crate::TermWindow {
+    pub fn paint_standalone_window_buttons(&mut self) -> anyhow::Result<()> {
+        if !standalone_window_buttons(&self.config, self.layout_is_effective_fullscreen()) {
+            return Ok(());
+        }
+        let font = self.fonts.title_font()?;
+        let metrics = RenderMetrics::with_font_metrics(&font.metrics());
+        let maximized = self.window_state.contains(window::WindowState::MAXIMIZED);
+        let background: config::RgbaColor = self
+            .get_active_pane_or_overlay()
+            .map(|pane| pane.palette().background)
+            .unwrap_or_else(|| self.palette().background)
+            .into();
+        let (_, _, lightness, _) = background.to_hsla();
+        let buttons = [
+            IntegratedTitleButton::Hide,
+            IntegratedTitleButton::Maximize,
+            IntegratedTitleButton::Close,
+        ]
+        .iter()
+        .copied()
+        .map(|button| {
+            let colors = windows::window_button_colors(
+                lightness,
+                self.config.integrated_title_button_color.clone(),
+                button,
+            );
+            window_button_element(button, maximized, &font, &metrics, &self.config)
+                .colors(colors.colors)
+                .hover_colors(Some(colors.hover_colors))
+        })
+        .collect();
+        let row = Element::new(&font, ElementContent::Children(buttons)).float(Float::Right);
+        let height = standalone_window_button_height(self.dimensions.dpi as f32) as f32;
+        let colors = ElementColors {
+            border: BorderColor::default(),
+            bg: LinearRgba::TRANSPARENT.into(),
+            text: self.palette().foreground.to_linear().into(),
+        };
+        let strip = Element::new(&font, ElementContent::Children(vec![row]))
+            .display(DisplayType::Block)
+            .min_width(Some(Dimension::Pixels(self.dimensions.pixel_width as f32)))
+            .min_height(Some(Dimension::Pixels(height)))
+            .colors(colors)
+            .item_type(UIItemType::TabBar(TabBarItem::None));
+        let gl_state = self.render_state.as_ref().unwrap();
+        let computed = self.compute_element(
+            &LayoutContext {
+                height: config::DimensionContext {
+                    dpi: self.dimensions.dpi as f32,
+                    pixel_max: height,
+                    pixel_cell: metrics.cell_size.height as f32,
+                },
+                width: config::DimensionContext {
+                    dpi: self.dimensions.dpi as f32,
+                    pixel_max: self.dimensions.pixel_width as f32,
+                    pixel_cell: metrics.cell_size.width as f32,
+                },
+                bounds: euclid::rect(0.0, 0.0, self.dimensions.pixel_width as f32, height),
+                metrics: &metrics,
+                gl_state,
+                zindex: 20,
+            },
+            &strip,
+        )?;
+        let items = computed.ui_items();
+        self.render_element(&computed, gl_state, None)?;
+        // Hit testing scans backwards: append parent first, then its buttons.
+        self.ui_items.extend(items);
+        Ok(())
+    }
+}

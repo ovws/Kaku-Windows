@@ -1,0 +1,182 @@
+[Setup]
+AppId={{2F2976D2-0164-4E94-9B1E-767071124CF4}
+AppName=Kaku for Windows
+AppVersion=@VERSION@
+AppPublisher=Kaku Windows
+AppPublisherURL=https://github.com/ovws/Kaku-Windows
+DefaultDirName={code:GetDefaultInstallDir}
+DefaultGroupName=Kaku
+PrivilegesRequired=lowest
+SetupArchitecture=x64
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+MinVersion=10.0
+OutputDir=@OUTPUT_DIR@
+OutputBaseFilename=Kaku-Windows-@VERSION@-Setup
+SetupIconFile=@ICON@
+UninstallDisplayIcon={app}\kaku.ico
+Compression=lzma2/max
+SolidCompression=yes
+WizardStyle=modern
+WizardSmallImageFile=@LOGO@
+DisableWelcomePage=yes
+DisableProgramGroupPage=yes
+DisableReadyPage=yes
+DisableDirPage=no
+UsePreviousAppDir=yes
+UsePreviousTasks=yes
+CloseApplications=no
+RestartApplications=no
+UninstallDisplayName=Kaku for Windows
+
+[Tasks]
+Name: desktopicon; Description: "Create a desktop shortcut"; Flags: unchecked
+Name: mesa; Description: "Include software OpenGL fallback (older GPUs / remote desktop, +36 MB)"; Flags: unchecked
+
+[Files]
+@FILES@
+Source: "@CONFIG@"; DestDir: "{app}"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "@ICON@"; DestDir: "{app}"; Flags: ignoreversion
+
+[Icons]
+Name: "{userprograms}\Kaku\Kaku"; Filename: "{app}\Kaku.exe"; IconFilename: "{app}\kaku.ico"
+Name: "{userprograms}\Kaku\Uninstall Kaku"; Filename: "{uninstallexe}"; IconFilename: "{app}\kaku.ico"
+Name: "{userdesktop}\Kaku"; Filename: "{app}\Kaku.exe"; IconFilename: "{app}\kaku.ico"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\Kaku.exe"; Description: "Launch Kaku"; Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+Type: files; Name: "{app}\kaku-gui.exe"
+
+[Code]
+const
+  LegacyUninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\KakuWindows';
+var
+  LegacyDir: String;
+
+function CreateHardLink(NewName, ExistingName: String; SecurityAttributes: NativeUInt): Boolean;
+  external 'CreateHardLinkW@kernel32.dll stdcall';
+function OpenExclusive(FileName: String; Access, ShareMode: LongWord; Security: NativeUInt;
+  Creation, Attributes: LongWord; TemplateFile: THandle): THandle;
+  external 'CreateFileW@kernel32.dll stdcall';
+function CloseFileHandle(Handle: THandle): Boolean;
+  external 'CloseHandle@kernel32.dll stdcall';
+
+function FindLegacyDir(): String;
+var
+  Dir, Location, UninstallCommand: String;
+begin
+  Result := '';
+  if RegQueryStringValue(HKCU32, 'Software\KakuWindows', 'InstallDir', Dir) and
+     RegQueryStringValue(HKCU32, LegacyUninstallKey, 'InstallLocation', Location) and
+     RegQueryStringValue(HKCU32, LegacyUninstallKey, 'UninstallString', UninstallCommand) then
+  begin
+    if (CompareText(Dir, Location) = 0) and
+       (CompareText(UninstallCommand, '"' + AddBackslash(Dir) + 'Uninstall.exe"') = 0) and
+       FileExists(AddBackslash(Dir) + 'Kaku.exe') and
+       FileExists(AddBackslash(Dir) + 'Uninstall.exe') then
+      Result := Dir;
+  end;
+end;
+
+function GetDefaultInstallDir(Param: String): String;
+begin
+  Result := FindLegacyDir();
+  if Result = '' then Result := ExpandConstant('{localappdata}\Programs\Kaku');
+end;
+
+function FilesAreAvailable(Dir: String): Boolean;
+var
+  Handle: THandle;
+  Name: String;
+  I: Integer;
+begin
+  Result := True;
+  for I := 0 to 1 do
+  begin
+    if I = 0 then Name := 'Kaku.exe' else Name := 'kaku-gui.exe';
+    Name := AddBackslash(Dir) + Name;
+    if FileExists(Name) then
+    begin
+      Handle := OpenExclusive(Name, $40000000, 0, 0, 3, 0, 0);
+      if Handle = THandle(-1) then
+      begin
+        Result := False;
+        Exit;
+      end;
+      CloseFileHandle(Handle);
+    end;
+  end;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  if not FilesAreAvailable(WizardDirValue()) then
+    Result := 'Close Kaku before updating, and check that the installation folder is writable.';
+end;
+
+procedure EnsureGuiAlias();
+var
+  MainExe, AliasExe: String;
+begin
+  MainExe := ExpandConstant('{app}\Kaku.exe');
+  AliasExe := ExpandConstant('{app}\kaku-gui.exe');
+  if FileExists(AliasExe) and not DeleteFile(AliasExe) then
+    RaiseException('Unable to replace the GUI companion. Close Kaku and retry.');
+  if not CreateHardLink(AliasExe, MainExe, 0) then
+    if not CopyFile(MainExe, AliasExe, False) then
+      RaiseException('Unable to create the GUI companion executable.');
+end;
+
+procedure InitializeWizard();
+var
+  Tasks: String;
+begin
+  LegacyDir := FindLegacyDir();
+  if ExpandConstant('{param:TASKS|}') = '' then
+  begin
+    Tasks := WizardSelectedTasks(False);
+    if FileExists(AddBackslash(WizardDirValue()) + 'mesa\opengl32.dll') then
+      Tasks := Tasks + ',mesa';
+    if FileExists(ExpandConstant('{userdesktop}\Kaku.lnk')) then
+      Tasks := Tasks + ',desktopicon';
+    WizardSelectTasks(Tasks);
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    { Retire the NSIS uninstaller only after an in-place migration succeeds.
+      Never run it: it would delete the newly installed files. }
+    if (LegacyDir <> '') and
+       (CompareText(RemoveBackslashUnlessRoot(ExpandFileName(LegacyDir)),
+                    RemoveBackslashUnlessRoot(ExpandFileName(WizardDirValue()))) = 0) then
+    begin
+      if DeleteFile(AddBackslash(LegacyDir) + 'Uninstall.exe') then
+      begin
+        RegDeleteKeyIncludingSubkeys(HKCU32, LegacyUninstallKey);
+        RegDeleteValue(HKCU32, 'Software\KakuWindows', 'InstallDir');
+        RegDeleteKeyIfEmpty(HKCU32, 'Software\KakuWindows');
+      end
+      else Log('Legacy uninstaller could not be removed; retaining its registry entry.');
+    end;
+  end;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  Result := FilesAreAvailable(ExpandConstant('{app}'));
+  if not Result then
+    SuppressibleMsgBox('Close Kaku before uninstalling, and check that the installation folder is writable.',
+      mbError, MB_OK, IDOK);
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = wpSelectTasks then
+    WizardForm.NextButton.Caption := SetupMessage(msgButtonInstall);
+end;

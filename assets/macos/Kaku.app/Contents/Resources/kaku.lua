@@ -276,6 +276,12 @@ end)()
 -- These are device pixels, not points, and that is deliberate: `pt` doubles
 -- the visible gutter on a 2x display, which is where the spacing was tuned.
 local function get_default_padding()
+  -- Windows already reserves a DPI-scaled strip for the caption buttons.
+  -- Avoid adding another top gutter below that strip.
+  if package.config:sub(1, 1) == '\\' then
+    local horizontal = low_resolution_screen and '26px' or '40px'
+    return { left = horizontal, right = horizontal, top = '0px', bottom = '0px' }
+  end
   if low_resolution_screen then
     return { left = '26px', right = '26px', top = '26px', bottom = '0px' }
   end
@@ -4092,8 +4098,12 @@ config.use_resize_increments = false
 
 config.initial_cols = 110
 config.initial_rows = 22
--- Keep native macOS window shadow by default.
+-- Windows draws caption buttons without a native title/status bar.
 config.window_decorations = "INTEGRATED_BUTTONS|RESIZE"
+if package.config:sub(1, 1) == '\\' then
+  config.integrated_title_button_style = 'Windows'
+  config.integrated_title_button_alignment = 'Right'
+end
 -- Window frame colors will be set after color_scheme is determined
 
 config.window_background_opacity = 1.0
@@ -4432,7 +4442,8 @@ config.send_composed_key_when_left_alt_is_pressed = false
 -- Keep Right Option available for composing locale/symbol characters.
 config.send_composed_key_when_right_alt_is_pressed = true
 config.native_macos_fullscreen_mode = true
-config.quit_when_all_windows_are_closed = false
+-- Windows should exit after the last shell/window closes; macOS keeps Dock reopen.
+config.quit_when_all_windows_are_closed = package.config:sub(1, 1) == '\\'
 
 -- ===== Key Bindings =====
 -- Wrapped in an IIFE so the ~50-entry table constructor gets its own function

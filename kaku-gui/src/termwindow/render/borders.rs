@@ -26,6 +26,9 @@ pub(crate) fn integrated_buttons_top_inset(
     top_tab_bar_visible: bool,
     dpi: f32,
 ) -> usize {
+    if super::window_buttons::standalone_window_buttons(config, is_fullscreen) {
+        return super::window_buttons::standalone_window_button_height(dpi);
+    }
     if !is_fullscreen
         && config
             .window_decorations
@@ -42,6 +45,9 @@ fn integrated_buttons_top_background(
     non_fancy_top_tab_bar_visible: bool,
     pane_background: LinearRgba,
 ) -> LinearRgba {
+    if super::window_buttons::standalone_window_buttons(config, false) {
+        return pane_background.mul_alpha(config.window_background_opacity);
+    }
     if non_fancy_top_tab_bar_visible && config.window_background_opacity == 1.0 {
         config
             .resolved_palette

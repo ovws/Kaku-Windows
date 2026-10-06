@@ -199,3 +199,33 @@ Preserve this Windows-only default when merging upstream. Do not change
 font size/line height to mask this rendering issue. Keep WebGPU explicitly
 selectable. This is a workaround, not proof of the WebGPU root cause; verify
 descenders, CJK text, scrolling, resize and mixed-DPI displays before release.
+
+Windows must set `quit_when_all_windows_are_closed = true` in the bundled
+config so exiting the last shell does not leave a hidden GUI process. Preserve
+macOS Dock residency. Verify last-shell exit and exit with other panes open.
+
+Windows uses `INTEGRATED_BUTTONS|RESIZE` with Windows-style buttons.
+Retro tabs use the standalone renderer in `render/window_buttons.rs`, even
+when the tab bar is hidden. Preserve its DPI-scaled top clearance, reverse
+hit-test order, close confirmation and last-window exit behavior. Do not
+restore a native title bar or change the shipped retro tab style.
+
+## Windows installer
+
+Build the per-user Inno Setup 7 installer with `scripts/build_windows_installer.py`
+from a verified portable staging directory. Keep CLI, AI helper, fonts,
+ConPTY and ANGLE in the required component. Mesa is an optional software
+OpenGL component; retain it in the complete portable ZIP. Deduplicate the
+identical GUI executables with a hard link, falling back to a copy when the
+filesystem cannot create one. Preserve existing config on upgrade and delete
+only known payload files during uninstall; never recursively remove user files.
+Verify install, upgrade, CLI startup, optional Mesa and uninstall before release,
+and explicitly distinguish Wine smoke results from native Windows validation.
+
+Keep the Inno AppId stable. An in-place NSIS migration must preserve config,
+validate the legacy registry path and retire the legacy uninstaller only after
+installation succeeds. Never run the old NSIS uninstaller over new files.
+Installing into a different directory must preserve the separate legacy install.
+The workflow template lives under `scripts/windows/` until workflow permissions
+are available. Wine lifecycle tests are useful evidence, but do not replace
+native Windows checks or actual old-installer migration tests.

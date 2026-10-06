@@ -4,10 +4,12 @@ use super::utilsprites::RenderMetrics;
 use crate::colorease::ColorEase;
 use crate::frontend::{front_end, refresh_fast_config_snapshot, try_front_end};
 use crate::inputmap::InputMap;
+#[cfg(not(target_os = "macos"))]
+use crate::overlay::confirm_close_window;
 use crate::overlay::launcher::{LauncherAction, LauncherTabEntry};
 use crate::overlay::{
-    confirm_close_pane, confirm_close_tab, confirm_close_window, confirm_quit_program, launcher,
-    start_overlay, start_overlay_pane, CopyModeParams, CopyOverlay, LauncherArgs, LauncherFlags,
+    confirm_close_pane, confirm_close_tab, confirm_quit_program, launcher, start_overlay,
+    start_overlay_pane, CopyModeParams, CopyOverlay, LauncherArgs, LauncherFlags,
     QuickSelectOverlay,
 };
 use crate::resize_increment_calculator::ResizeIncrementCalculator;
