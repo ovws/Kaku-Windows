@@ -255,7 +255,7 @@ fn press_takes_touch_extension(kind: &WMEK, modifiers: window::Modifiers) -> boo
 fn tab_bar_item_takes_touch_extension(item: &UIItemType) -> bool {
     matches!(
         item,
-        UIItemType::TabBar(TabBarItem::Tab { .. } | TabBarItem::NewTabButton)
+        UIItemType::TabBar(TabBarItem::Tab { .. } | TabBarItem::NewTabButton | TabBarItem::SettingsButton)
     )
 }
 
@@ -1501,6 +1501,10 @@ impl super::TermWindow {
                     TabBarItem::NewTabButton { .. } => {
                         self.tab_drag_state = None;
                         self.do_new_tab_button_click(MousePress::Left);
+                    }
+                    TabBarItem::SettingsButton => {
+                        self.tab_drag_state = None;
+                        crate::frontend::open_kaku_config();
                     }
                     TabBarItem::None | TabBarItem::LeftStatus | TabBarItem::RightStatus => {
                         self.tab_drag_state = None;
