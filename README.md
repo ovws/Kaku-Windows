@@ -27,6 +27,11 @@ The Windows build targets 64-bit Windows 10 and 11. Windows PowerShell is the
 default shell. The bundled Kaku config maps Command-key shortcuts to Windows
 Ctrl/Alt shortcuts.
 
+Open terminal settings with **Ctrl+,**, or open the command palette with
+**Ctrl+Shift+P** and choose **Settings**. Settings opens in a separate window;
+press Esc to close it and return to your terminal. You can also run
+`kaku-cli.exe config` from the installation directory.
+
 ## Build from source
 
 Install Rust 1.95.0 and the Visual Studio C++ Build Tools, then run these

@@ -66,8 +66,17 @@ macOS 26 上 NSMenu 的 keyEquivalent modifier 匹配并不严格相等。给 me
 - 如果只有 `key_is_down: false`、没有 `key_is_down: true`，就是 menu keyEquivalent 拦了 keyDown。
 - 这种情况下不要去查 termwiz / PTY / termios，先找 `set_key_equiv_modifier_mask` 装配点。
 
+## Cocoa 对象所有权：StrongPtr::new 只接 alloc / new / copy
+
+`StrongPtr::new` 接管的是 +1 引用，只能包 `alloc`+`init`、`new`、`copy` 拿到的对象。`+[NSMenuItem separatorItem]` 这类类方法返回的是 autorelease 的 +0 对象，必须用 `StrongPtr::retain`，否则 drop 时多 release 一次。V0.22.0 前 `MenuItem::new_separator()` 就是这么写的：主菜单栏在启动时构建，那时还没有 autorelease pool（从代码推断，未实测），多出的那次 release 被泄漏抵消，所以一直没暴露；第一个在事件处理里构建、带分隔线的菜单（右键 tab 菜单）一弹出就崩（`7b6b6ce2`，带回归测试）。
+
+- 崩溃签名：主线程 `objc_release > AutoreleasePoolPage::releaseUntil > objc_autoreleasePoolPop > -[NSApplication run]`，紧跟在一次原生菜单动作之后。看到它先审 `StrongPtr::new` 包的是不是非 alloc/new/copy 来的对象，再怀疑 AppKit。
+- 拿不准某个 API 返回 +0 还是 +1，用 `clang -fno-objc-arc` 写个十行的 MRC 程序在 `@autoreleasepool` 里打印 `retainCount`，实测，不靠记忆。
+- 新增在事件处理中构建的 `NSMenu`（右键菜单等），必须在 `make app` 的包里真的右键点一次菜单项再下结论，单元测试看不到 autorelease pool 的时序。
+- `frontend.rs` 里“macOS 上配置重载不重建菜单栏”的 TODO 可能是同一个多释放，而不是 AppKit 限制，未验证；要放开重建前先在修复后的代码上重测。
+
 ## 调试方式
 
-- 怀疑 menu 注入相关崩溃时：读 `~/Library/Logs/DiagnosticReports/Kaku-*.ips` 里最近的 crash report。
+- 怀疑 menu 注入或菜单对象相关崩溃时：读 `~/Library/Logs/DiagnosticReports/kaku-gui-*.ips` 里最近的 crash report。
 - 看 `NSMenu _performKeyEquivalentWithDelegate:` 栈帧是 AppKit 注入项的标志。
 - 主要复现环境是一台 macOS 26 实机。

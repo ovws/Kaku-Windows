@@ -210,7 +210,10 @@ mod tests {
 
     #[test]
     fn fs_read_refuses_ssh_directory() {
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = paths::home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let ssh = format!("{}/.ssh", home);
         if !std::path::Path::new(&ssh).exists() {
             return;
@@ -229,7 +232,10 @@ mod tests {
 
     #[test]
     fn search_tools_refuse_ssh_directory() {
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = paths::home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let ssh = format!("{}/.ssh", home);
         if !std::path::Path::new(&ssh).exists() {
             return;

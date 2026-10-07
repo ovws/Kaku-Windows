@@ -1569,6 +1569,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(windows))]
     fn restore_cwd_local_domain_requires_local_url() {
         assert_eq!(
             cwd_for_restore("local", Some(&serde_url("file:///Users/a/src"))).as_deref(),
@@ -1586,6 +1587,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(windows))]
     fn restore_cwd_local_domain_accepts_exact_local_hostname() {
         // URL parsing lowercases the host; the comparison must not care.
         assert_eq!(
@@ -1612,6 +1614,23 @@ mod tests {
                 Some("mac.local"),
             ),
             None
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn restore_windows_local_cwd_accepts_drive_urls_and_local_hostname() {
+        assert_eq!(
+            cwd_for_restore("local", Some(&serde_url("file:///C:/Users/a/src"))).as_deref(),
+            Some(r"C:\Users\a\src")
+        );
+        assert_eq!(
+            cwd_from_working_dir_with_hostname(
+                Some(&serde_url("file://PC.LOCAL/C:/Users/a/src")),
+                Some("pc.local"),
+            )
+            .as_deref(),
+            Some(r"C:\Users\a\src")
         );
     }
 

@@ -16,9 +16,7 @@ use winapi::shared::minwindef::*;
 use winapi::shared::windef::*;
 use winapi::um::shellscalingapi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
 use winapi::um::winbase::INFINITE;
-use winapi::um::wingdi::{
-    DEVMODEW, DISPLAY_DEVICEW, DM_DISPLAYFREQUENCY,
-};
+use winapi::um::wingdi::{DEVMODEW, DISPLAY_DEVICEW, DM_DISPLAYFREQUENCY};
 use winapi::um::winnt::HANDLE;
 use winapi::um::winuser::*;
 

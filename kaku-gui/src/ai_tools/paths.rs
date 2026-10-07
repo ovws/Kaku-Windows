@@ -13,7 +13,15 @@ use std::path::{Path, PathBuf};
 /// Single source of truth for `$HOME` lookups in this crate so the failure
 /// mode (panic / silent-empty / Result) does not drift between call sites.
 pub(crate) fn home() -> Result<PathBuf> {
-    let h = std::env::var_os("HOME").context("HOME not set")?;
+    let h = std::env::var_os("HOME")
+        .or_else(|| {
+            if cfg!(windows) {
+                std::env::var_os("USERPROFILE")
+            } else {
+                None
+            }
+        })
+        .context("user home directory not set")?;
     Ok(PathBuf::from(h))
 }
 
@@ -285,7 +293,7 @@ pub(crate) fn resolve(path: &str, cwd: &str) -> Result<PathBuf> {
             home.join(&path[2..])
         });
     }
-    if path.starts_with('/') {
+    if Path::new(path).is_absolute() || path.starts_with('/') {
         Ok(PathBuf::from(path))
     } else {
         Ok(PathBuf::from(cwd).join(path))
@@ -296,7 +304,11 @@ pub(crate) fn resolve(path: &str, cwd: &str) -> Result<PathBuf> {
 /// `~/` paths remain explicit opt-ins, but `../../…` should not quietly mutate
 /// files outside the pane's cwd while the approval prompt shows a relative path.
 pub(crate) fn reject_relative_cwd_escape(raw_path: &str, resolved: &Path, cwd: &str) -> Result<()> {
-    if raw_path.starts_with('/') || raw_path.starts_with("~/") || raw_path == "~" {
+    if Path::new(raw_path).is_absolute()
+        || raw_path.starts_with('/')
+        || raw_path.starts_with("~/")
+        || raw_path == "~"
+    {
         return Ok(());
     }
 
@@ -401,7 +413,10 @@ mod tests {
 
     #[test]
     fn resolve_expands_tilde() {
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         assert_eq!(
             resolve("~/foo", "/tmp").unwrap(),
             PathBuf::from(&home).join("foo")
@@ -451,7 +466,10 @@ mod tests {
 
     #[test]
     fn resolve_checked_arg_rejects_sensitive_path() {
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let args = serde_json::json!({ "path": format!("{home}/.ssh/id_rsa") });
         let err = resolve_checked_arg(&args, "/tmp").unwrap_err();
         assert!(err.to_string().contains("protected") || err.to_string().contains("credential"));
@@ -493,7 +511,10 @@ mod tests {
 
     #[test]
     fn reject_if_sensitive_blocks_ssh() {
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let ssh = PathBuf::from(&home).join(".ssh");
         let err = reject_if_sensitive(&ssh).expect_err("must reject ~/.ssh");
         assert!(err.to_string().contains("protected secret location"));
@@ -501,7 +522,10 @@ mod tests {
 
     #[test]
     fn reject_if_sensitive_blocks_assistant_config() {
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let assistant_config = PathBuf::from(&home).join(".config/kaku/assistant.toml");
         let err = reject_if_sensitive(&assistant_config).expect_err("must reject assistant config");
         assert!(err.to_string().contains("protected secret location"));
@@ -588,7 +612,10 @@ mod tests {
 
     #[test]
     fn reject_if_sensitive_blocks_aws_credentials() {
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let aws = PathBuf::from(&home).join(".aws/credentials");
         let err = reject_if_sensitive(&aws).expect_err("must reject ~/.aws/credentials");
         assert!(err.to_string().contains("protected secret location"));
@@ -596,7 +623,10 @@ mod tests {
 
     #[test]
     fn reject_if_sensitive_blocks_gnupg() {
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let gpg = PathBuf::from(&home).join(".gnupg");
         let err = reject_if_sensitive(&gpg).expect_err("must reject ~/.gnupg");
         assert!(err.to_string().contains("protected secret location"));
@@ -604,7 +634,7 @@ mod tests {
 
     #[test]
     fn reject_if_sensitive_blocks_common_cli_token_stores() {
-        let home = PathBuf::from(std::env::var("HOME").expect("HOME not set"));
+        let home = home().expect("user home not set");
         for relative in [
             ".config/gh/hosts.yml",
             ".docker/config.json",
@@ -624,7 +654,10 @@ mod tests {
     fn reject_if_sensitive_blocks_descendant_of_sensitive_dir() {
         // ~/.ssh/id_rsa, ~/.ssh/config, etc must all be blocked because
         // ~/.ssh as a directory is in the blocklist (starts_with semantic).
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let key = PathBuf::from(&home).join(".ssh/id_rsa");
         let err = reject_if_sensitive(&key).expect_err("must reject ~/.ssh/id_rsa");
         assert!(err.to_string().contains("protected secret location"));
@@ -648,7 +681,10 @@ mod tests {
         // guard. This is exactly what canonicalize() is for.
         use std::os::unix::fs as unix_fs;
         let dir = tempfile::tempdir().unwrap();
-        let home = std::env::var("HOME").expect("HOME not set");
+        let home = home()
+            .expect("user home not set")
+            .to_string_lossy()
+            .into_owned();
         let target = PathBuf::from(&home).join(".ssh");
         if !target.exists() {
             // ~/.ssh might not exist on this machine; skip the realism check

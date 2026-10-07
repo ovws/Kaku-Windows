@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       release_tag:
@@ -42,22 +45,9 @@ jobs:
         shell: pwsh
         run: ./scripts/download_windows_assets.ps1
 
-      - name: Resolve Windows dependency lock
+      - name: Verify dependency lock
         shell: pwsh
-        run: cargo metadata --format-version 1 > $null
-
-      - name: Commit resolved Windows dependency lock
-        shell: pwsh
-        run: |
-          if (git diff --quiet -- Cargo.lock) {
-            Write-Host 'Cargo.lock is already current.'
-          } else {
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add Cargo.lock
-            git commit -m 'build: update lockfile for Windows backend'
-            git push origin "HEAD:$env:GITHUB_REF_NAME"
-          }
+        run: cargo metadata --locked --format-version 1 > $null
 
       - name: Build Kaku binaries
         shell: pwsh
@@ -85,11 +75,13 @@ jobs:
           Copy-Item 'assets/windows/README.md' (Join-Path $stage 'notices/Windows-runtime-assets.txt')
           Copy-Item 'assets/windows/conhost-README.md' (Join-Path $stage 'notices/Microsoft-ConPTY.txt')
           Copy-Item 'assets/windows/mesa-README.md' (Join-Path $stage 'notices/Mesa.txt')
+          Copy-Item 'deps/libssh-rs-sys/vendored/COPYING' (Join-Path $stage 'notices/libssh.txt')
+          Copy-Item 'deps/libssh-rs-sys/README.md' (Join-Path $stage 'notices/libssh-rs-sys.txt')
           Copy-Item 'README.md' (Join-Path $stage 'README.txt')
           Copy-Item 'LICENSE.md' $stage
           Copy-Item 'NOTICE.md' $stage
 
-          $required = @('Kaku.exe', 'kaku-cli.exe', 'kaku-gui.exe', 'k.exe', 'kaku.lua', 'fonts/JetBrainsMono-Regular.ttf', 'fonts/SymbolsNerdFontMono-Regular.ttf', 'conpty.dll', 'OpenConsole.exe', 'libEGL.dll', 'libGLESv2.dll', 'mesa/opengl32.dll', 'notices/Microsoft-ConPTY.txt', 'notices/Mesa.txt')
+          $required = @('Kaku.exe', 'kaku-cli.exe', 'kaku-gui.exe', 'k.exe', 'kaku.lua', 'fonts/JetBrainsMono-Regular.ttf', 'fonts/SymbolsNerdFontMono-Regular.ttf', 'conpty.dll', 'OpenConsole.exe', 'libEGL.dll', 'libGLESv2.dll', 'mesa/opengl32.dll', 'notices/Microsoft-ConPTY.txt', 'notices/Mesa.txt', 'notices/libssh.txt', 'notices/libssh-rs-sys.txt')
           foreach ($path in $required) {
             if (-not (Test-Path (Join-Path $stage $path))) {
               throw "Windows package is missing required file: $path"
@@ -124,7 +116,7 @@ jobs:
           retention-days: 14
 
       - name: Publish GitHub Release
-        if: ${{ env.RELEASE_TAG != '' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.RELEASE_TAG != '' }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'

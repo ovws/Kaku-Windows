@@ -89,6 +89,9 @@ These are the areas that produce the most post-release bug reports and that CI c
 
 8. **Settings lifecycle and custom configs** (#545): start the app with a minimal standalone `--config-file`, switch between Kaku Light and Kaku Dark, and confirm Settings edits that file and the main window follows. Save and exit Settings repeatedly; no destroyed-window repaint panic should appear.
 
+9. **Tab bar pointer paths** (V0.22.0): with 2+ tabs and the bar at the bottom, tap just above a tab and confirm it switches; middle-click to paste on the last terminal row and confirm no tab closes; right-click an inactive tab, choose Close Tab several times and confirm the app stays up and closes that tab while you stay on yours.
+10. **Split panes with dimming** (#562): set `inactive_pane_hsb = { brightness = 0.7 }`, split top|bottom with the tab bar at top and at bottom, focus each pane, and confirm the dimmed background stops exactly at the line with no undimmed strip on the right or bottom edge; split into three panes and confirm two dimmed neighbours still show a faint line; drag the line and confirm it does not jump a row on grab.
+
 When a release fixes a bug outside this list, add the reproduction here so the next release re-checks it.
 
 ## Verification commands
@@ -103,14 +106,14 @@ When a release fixes a bug outside this list, add the reproduction here so the n
 | Config release readiness | `./scripts/check_config_release_readiness.sh` |
 | Full preflight | `./scripts/release.sh --dry-run` |
 
-`release.sh` runs fmt-check, check, and test again as `stage:checks` after preflight, so it is fine to skip them locally if the dry-run passes.
+`release.sh --dry-run` stops after preflight and does not run source checks. The normal release reuses successful CI Checks for the current HEAD; otherwise `stage:checks` runs the local checks below, as described in `AGENTS.md`. A passing dry-run alone is not source-check evidence.
 
 ## Stage map
 
 `./scripts/release.sh` runs these stages in order. Each is timed and labeled `[stage:<name>]`.
 
 1. **preflight**: clean git on `main` in sync with `origin/main`, version consistency, gh auth, release notes, config, latest `Build Validation` workflow run on `main` green (an in-progress run only warns), profile, signing identity, notarization creds.
-2. **stage:checks**: `make fmt-check && make check && make test`. Set `RUN_CLIPPY=1` to add clippy. Set `SKIP_TESTS=1` to skip tests (avoid).
+2. **stage:checks**: reuse successful CI Checks on the current HEAD, or run `make fmt-check && make check && make test` locally. `RUN_CLIPPY=1` adds local clippy in either case. `SKIP_TESTS=1` skips local tests (avoid).
 3. **stage:build**: `./scripts/build.sh`, `PROFILE=release-opt`, `BUILD_ARCH=universal`. Output: `dist/Kaku.app`, `dist/Kaku.dmg`, `dist/kaku_for_update.zip`, `dist/kaku_for_update.zip.sha256`.
 4. **stage:notarize**: `./scripts/notarize.sh`. Tries rcodesign first; falls back to notarytool if rcodesign fails and a notarytool profile exists.
 5. **stage:tag**: `git tag -a V<version> -m 'Release V<version>'` then `git push origin V<version>`. Idempotent: reuses an existing tag at HEAD instead of dying.

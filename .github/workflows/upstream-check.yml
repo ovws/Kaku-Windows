@@ -1,0 +1,34 @@
+name: Check Kaku upstream
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Check upstream changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags https://github.com/tw93/Kaku.git main
+          upstream_sha="$(git rev-parse FETCH_HEAD)"
+          if git merge-base --is-ancestor "$upstream_sha" HEAD; then
+            echo "Up to date with Kaku upstream: $upstream_sha" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo 'Kaku upstream changes are available.'
+              echo "Upstream commit: $upstream_sha"
+              echo 'Run bash scripts/sync_upstream.sh, resolve Windows compatibility issues, and run Windows Build.'
+              git log --oneline HEAD..FETCH_HEAD
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi

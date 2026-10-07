@@ -1847,3 +1847,15 @@ fn refresh_focus_sends_only_focus_in_when_already_focused() {
 
     wait_for_writer_output(&writer, b"\x1b[I");
 }
+
+#[test]
+fn osc_zero_and_two_set_window_title_with_both_terminators() {
+    for osc in [0, 2] {
+        for terminator in ["\x07", "\x1b\\"] {
+            let mut term = TestTerm::new(5, 20, 0);
+            let bytes = format!("\x1b]{osc};test-title{terminator}");
+            term.advance_bytes(bytes.as_bytes());
+            assert_eq!(term.get_title(), "test-title");
+        }
+    }
+}
