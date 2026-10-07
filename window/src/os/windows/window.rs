@@ -3,10 +3,9 @@ use crate::connection::ConnectionOps;
 use crate::parameters::{self, Parameters};
 use crate::{
     Appearance, Clipboard, ClipboardData, DeadKeyStatus, Dimensions, Handled, KeyCode, KeyEvent,
-    Modifiers, MouseButtons, MouseEvent, MouseEventKind, MousePress, Point, RawKeyEvent, Rect,
-    MouseCursor, RequestedWindowGeometry, ResolvedGeometry, ScreenPoint, ScreenRect, ULength,
-    WindowDecorations,
-    WindowEvent, WindowEventSender, WindowOps, WindowState,
+    Modifiers, MouseButtons, MouseCursor, MouseEvent, MouseEventKind, MousePress, Point,
+    RawKeyEvent, Rect, RequestedWindowGeometry, ResolvedGeometry, ScreenPoint, ScreenRect, ULength,
+    WindowDecorations, WindowEvent, WindowEventSender, WindowOps, WindowState,
 };
 use anyhow::{bail, Context};
 use async_trait::async_trait;
@@ -680,7 +679,9 @@ impl WindowInner {
     fn set_ime_window_position(&mut self, cursor: Rect) {
         let imc = ImmContext::get(self.hwnd.0);
         match self.config.ime_preedit_rendering {
-            ImePreeditRendering::Builtin => imc.set_candidate_window_position(cursor),
+            ImePreeditRendering::Builtin | ImePreeditRendering::BuiltinInsert => {
+                imc.set_candidate_window_position(cursor)
+            }
             ImePreeditRendering::System => imc.set_composition_window_position(cursor),
         }
     }
