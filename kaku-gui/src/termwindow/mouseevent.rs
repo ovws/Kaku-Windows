@@ -255,7 +255,9 @@ fn press_takes_touch_extension(kind: &WMEK, modifiers: window::Modifiers) -> boo
 fn tab_bar_item_takes_touch_extension(item: &UIItemType) -> bool {
     matches!(
         item,
-        UIItemType::TabBar(TabBarItem::Tab { .. } | TabBarItem::NewTabButton)
+        UIItemType::TabBar(
+            TabBarItem::Tab { .. } | TabBarItem::NewTabButton | TabBarItem::SettingsButton
+        )
     )
 }
 
@@ -1502,6 +1504,10 @@ impl super::TermWindow {
                         self.tab_drag_state = None;
                         self.do_new_tab_button_click(MousePress::Left);
                     }
+                    TabBarItem::SettingsButton => {
+                        self.tab_drag_state = None;
+                        crate::frontend::open_kaku_config();
+                    }
                     TabBarItem::None | TabBarItem::LeftStatus | TabBarItem::RightStatus => {
                         self.tab_drag_state = None;
                         let fullscreen = self.window_state.contains(WindowState::FULL_SCREEN);
@@ -1566,6 +1572,7 @@ impl super::TermWindow {
                 TabBarItem::None
                 | TabBarItem::LeftStatus
                 | TabBarItem::RightStatus
+                | TabBarItem::SettingsButton
                 | TabBarItem::WindowButton(_) => {}
             },
             WMEK::Press(MousePress::Right) => match item {
@@ -1580,6 +1587,7 @@ impl super::TermWindow {
                 TabBarItem::None
                 | TabBarItem::LeftStatus
                 | TabBarItem::RightStatus
+                | TabBarItem::SettingsButton
                 | TabBarItem::WindowButton(_) => {}
             },
             WMEK::Move => match item {
@@ -1599,7 +1607,8 @@ impl super::TermWindow {
                 }
                 TabBarItem::WindowButton(_)
                 | TabBarItem::Tab { .. }
-                | TabBarItem::NewTabButton { .. } => {}
+                | TabBarItem::NewTabButton { .. }
+                | TabBarItem::SettingsButton => {}
             },
             WMEK::VertWheel(n) => {
                 let scrolls_tabs = self.config.mouse_wheel_scrolls_tabs;
@@ -1614,6 +1623,7 @@ impl super::TermWindow {
         let cursor = match item {
             TabBarItem::Tab { .. }
             | TabBarItem::NewTabButton { .. }
+            | TabBarItem::SettingsButton
             | TabBarItem::WindowButton(_) => MouseCursor::Hand,
             _ => MouseCursor::Arrow,
         };

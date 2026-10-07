@@ -29,6 +29,7 @@ pub enum TabBarItem {
     RightStatus,
     Tab { tab_idx: usize, active: bool },
     NewTabButton,
+    SettingsButton,
     WindowButton(IntegratedTitleButton),
 }
 
@@ -986,6 +987,22 @@ impl TabBarState {
                 new_tab_hover_attrs.clone()
             },
         );
+        let settings_button = parse_status_text(
+            "⚙",
+            if config.use_fancy_tab_bar {
+                CellAttributes::default()
+            } else {
+                new_tab_attrs.clone()
+            },
+        );
+        let settings_button_hover = parse_status_text(
+            "⚙",
+            if config.use_fancy_tab_bar {
+                CellAttributes::default()
+            } else {
+                new_tab_hover_attrs.clone()
+            },
+        );
 
         let use_integrated_title_buttons = config
             .window_decorations
@@ -1013,11 +1030,15 @@ impl TabBarState {
 
         // Tab titles are rendered contiguously; only reserve width for controls
         // that are actually shown.
-        let controls_width = if config.show_new_tab_button_in_tab_bar {
+        let controls_width = (if config.show_new_tab_button_in_tab_bar {
             new_tab.len()
         } else {
             0
-        };
+        }) + (if config.show_settings_button_in_tab_bar {
+            settings_button.len()
+        } else {
+            0
+        });
         let tab_width_max = tab_width_budget(
             title_width,
             controls_width,
@@ -1189,6 +1210,29 @@ impl TabBarState {
             items.push(TabEntry {
                 item: TabBarItem::NewTabButton,
                 title: new_tab_button.clone(),
+                progress: Progress::None,
+                x: button_start,
+                width,
+            });
+
+            x += width;
+        }
+
+        // Settings button
+        if config.show_settings_button_in_tab_bar {
+            let hover = is_tab_hover(mouse_x, x, settings_button_hover.len());
+            let button = if hover {
+                &settings_button_hover
+            } else {
+                &settings_button
+            };
+            let button_start = x;
+            let width = button.len();
+
+            line.append_line(button.clone(), SEQ_ZERO);
+            items.push(TabEntry {
+                item: TabBarItem::SettingsButton,
+                title: button.clone(),
                 progress: Progress::None,
                 x: button_start,
                 width,

@@ -229,8 +229,14 @@ Hidden when only one tab is open. Auto-generated tab titles show the current
 directory by default. You can change the position, shorten path titles, or opt
 into showing the foreground command alongside the path:
 
+The bundled config shows a separate gear button in the tab bar. Click it to open
+Settings, or set `show_settings_button_in_tab_bar = false` to hide it. This
+button uses a reserved tab bar cell, so it does not cover a tab title or its
+attention indicator.
+
 ```lua
 config.tab_bar_at_bottom = false                   -- move to top
+config.show_settings_button_in_tab_bar = true     -- show a separate Settings button
 config.tab_title_show_basename_only = true         -- show "dirname" instead of "parent/dirname"
 config.tab_title_show_foreground_process = true    -- show "dirname·codex" while commands run
 config.tab_title_use_pane_title = true             -- show application titles set via OSC 0/2

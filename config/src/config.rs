@@ -551,6 +551,10 @@ pub struct Config {
     #[dynamic(default = "default_true")]
     pub show_new_tab_button_in_tab_bar: bool,
 
+    /// If true, show a button that opens Kaku Settings in the tab bar.
+    #[dynamic(default)]
+    pub show_settings_button_in_tab_bar: bool,
+
     #[dynamic(default = "default_true")]
     pub show_close_tab_button_in_tabs: bool,
 
