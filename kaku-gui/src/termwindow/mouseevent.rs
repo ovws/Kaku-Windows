@@ -255,7 +255,9 @@ fn press_takes_touch_extension(kind: &WMEK, modifiers: window::Modifiers) -> boo
 fn tab_bar_item_takes_touch_extension(item: &UIItemType) -> bool {
     matches!(
         item,
-        UIItemType::TabBar(TabBarItem::Tab { .. } | TabBarItem::NewTabButton | TabBarItem::SettingsButton)
+        UIItemType::TabBar(
+            TabBarItem::Tab { .. } | TabBarItem::NewTabButton | TabBarItem::SettingsButton
+        )
     )
 }
 

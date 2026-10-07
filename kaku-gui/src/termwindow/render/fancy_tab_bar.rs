@@ -328,7 +328,9 @@ impl crate::TermWindow {
         let num_tabs: f32 = items
             .iter()
             .map(|item| match item.item {
-                TabBarItem::NewTabButton | TabBarItem::SettingsButton | TabBarItem::Tab { .. } => 1.,
+                TabBarItem::NewTabButton | TabBarItem::SettingsButton | TabBarItem::Tab { .. } => {
+                    1.
+                }
                 _ => 0.,
             })
             .sum();
@@ -357,7 +359,9 @@ impl crate::TermWindow {
         for item in items {
             match item.item {
                 TabBarItem::LeftStatus => left_status.push(item_to_elem(item)),
-                TabBarItem::None | TabBarItem::RightStatus | TabBarItem::SettingsButton => right_eles.push(item_to_elem(item)),
+                TabBarItem::None | TabBarItem::RightStatus | TabBarItem::SettingsButton => {
+                    right_eles.push(item_to_elem(item))
+                }
                 TabBarItem::WindowButton(_) => {
                     if self.config.integrated_title_button_alignment
                         == IntegratedTitleButtonAlignment::Left
