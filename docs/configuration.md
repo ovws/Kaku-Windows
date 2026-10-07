@@ -231,6 +231,7 @@ into showing the foreground command alongside the path:
 
 ```lua
 config.tab_bar_at_bottom = false                   -- move to top
+config.show_settings_button_in_tab_bar = true     -- show a separate Settings button
 config.tab_title_show_basename_only = true         -- show "dirname" instead of "parent/dirname"
 config.tab_title_show_foreground_process = true    -- show "dirname·codex" while commands run
 config.tab_title_use_pane_title = true             -- show application titles set via OSC 0/2
