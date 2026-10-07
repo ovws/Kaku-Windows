@@ -1572,6 +1572,7 @@ impl super::TermWindow {
                 TabBarItem::None
                 | TabBarItem::LeftStatus
                 | TabBarItem::RightStatus
+                | TabBarItem::SettingsButton
                 | TabBarItem::WindowButton(_) => {}
             },
             WMEK::Press(MousePress::Right) => match item {
@@ -1586,6 +1587,7 @@ impl super::TermWindow {
                 TabBarItem::None
                 | TabBarItem::LeftStatus
                 | TabBarItem::RightStatus
+                | TabBarItem::SettingsButton
                 | TabBarItem::WindowButton(_) => {}
             },
             WMEK::Move => match item {
@@ -1605,7 +1607,8 @@ impl super::TermWindow {
                 }
                 TabBarItem::WindowButton(_)
                 | TabBarItem::Tab { .. }
-                | TabBarItem::NewTabButton { .. } => {}
+                | TabBarItem::NewTabButton { .. }
+                | TabBarItem::SettingsButton => {}
             },
             WMEK::VertWheel(n) => {
                 let scrolls_tabs = self.config.mouse_wheel_scrolls_tabs;
@@ -1620,6 +1623,7 @@ impl super::TermWindow {
         let cursor = match item {
             TabBarItem::Tab { .. }
             | TabBarItem::NewTabButton { .. }
+            | TabBarItem::SettingsButton
             | TabBarItem::WindowButton(_) => MouseCursor::Hand,
             _ => MouseCursor::Arrow,
         };
