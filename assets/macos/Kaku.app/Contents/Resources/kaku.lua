@@ -4864,6 +4864,17 @@ if package.config:sub(1, 1) == '\\' then
       end
     end
   end)()
+  -- Windows has no macOS application menu; provide the standard settings shortcut.
+  table.insert(config.keys, {
+    key = ',',
+    mods = 'CTRL',
+    action = wezterm.action.EmitEvent('open-kaku-config'),
+  })
+  table.insert(config.keys, {
+    key = 'p',
+    mods = 'CTRL|SHIFT',
+    action = wezterm.action.ActivateCommandPalette,
+  })
 end
 
 -- ===== Rendering & Performance =====

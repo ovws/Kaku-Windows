@@ -251,6 +251,7 @@ impl CommandDef {
             MoveTabToNewWindow,
             TogglePaneZoomState,
             ShowTabNavigator,
+            EmitEvent("open-kaku-config".to_string()),
             // Help menu
             ShowDebugOverlay,
             OpenUri("https://github.com/tw93/Kaku".to_string()),
@@ -374,6 +375,7 @@ impl CommandDef {
                         || name == "kaku-launch-lazygit"
                         || name == "kaku-launch-yazi"
                         || name == "run-kaku-ai-config"
+                        || name == "open-kaku-config"
             )
         }
 
@@ -1579,6 +1581,19 @@ pub fn derive_command_from_key_assignment(action: &KeyAssignment) -> Option<Comm
                     menubar: &["Shell"],
                     icon: None,
                 }
+            } else if name == "open-kaku-config" {
+                CommandDef {
+                    brief: "Settings".into(),
+                    doc: "Configure terminal font, theme, appearance and behavior".into(),
+                    keys: if cfg!(windows) {
+                        vec![(Modifiers::CTRL, ",".into())]
+                    } else {
+                        vec![]
+                    },
+                    args: &[ArgType::ActiveWindow],
+                    menubar: &[],
+                    icon: None,
+                }
             } else if name == "run-kaku-ai-config" {
                 CommandDef {
                     brief: "AI Config".into(),
@@ -2591,7 +2606,15 @@ pub fn derive_command_from_key_assignment(action: &KeyAssignment) -> Option<Comm
         ActivateCommandPalette => CommandDef {
             brief: "Command Palette".into(),
             doc: "Open command palette".into(),
-            keys: vec![(Modifiers::SUPER.union(Modifiers::SHIFT), "p".into())],
+            keys: vec![(
+                if cfg!(windows) {
+                    Modifiers::CTRL
+                } else {
+                    Modifiers::SUPER
+                }
+                .union(Modifiers::SHIFT),
+                "p".into(),
+            )],
             args: &[ArgType::ActivePane],
             menubar: &["Shell"],
             icon: None,
@@ -2651,6 +2674,8 @@ fn compute_default_actions() -> Vec<KeyAssignment> {
         ActivateCopyMode,
         ClearKeyTableStack,
         ActivateCommandPalette,
+        #[cfg(windows)]
+        EmitEvent("open-kaku-config".to_string()),
         // ----------------- View
         DecreaseFontSize,
         IncreaseFontSize,
@@ -2745,6 +2770,43 @@ mod tests {
     use config::keyassignment::KeyAssignment;
     use config::ConfigHandle;
     use window::Modifiers;
+
+    #[test]
+    fn settings_is_reachable_without_a_custom_key_binding() {
+        let config = ConfigHandle::default_config();
+        let action = KeyAssignment::EmitEvent("open-kaku-config".into());
+        let commands = CommandDef::actions_for_palette_only(&config);
+        let settings = commands
+            .iter()
+            .find(|cmd| cmd.action == action)
+            .expect("settings entry");
+        assert_eq!(settings.brief, "Settings");
+        assert_eq!(
+            commands.iter().filter(|cmd| cmd.action == action).count(),
+            1
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_settings_shortcuts_work_with_existing_configs() {
+        let config = ConfigHandle::default_config();
+        let input = crate::inputmap::InputMap::new(&config);
+        assert_eq!(
+            input
+                .keys
+                .default
+                .get(&(window::KeyCode::Char(','), Modifiers::CTRL))
+                .map(|entry| &entry.action),
+            Some(&KeyAssignment::EmitEvent("open-kaku-config".into()))
+        );
+        assert!(input
+            .keys
+            .default
+            .iter()
+            .any(|((_, mods), entry)| mods.contains(Modifiers::CTRL)
+                && entry.action == KeyAssignment::ActivateCommandPalette));
+    }
 
     #[test]
     fn deprecated_input_broadcast_actions_are_not_exposed() {
