@@ -987,6 +987,10 @@ impl TabBarState {
                 new_tab_hover_attrs.clone()
             },
         );
+        // Retro chrome is a line of text cells; only the fancy renderer can
+        // host an additional drawn control without taking tab-title cells.
+        let show_settings_button =
+            config.use_fancy_tab_bar && config.show_settings_button_in_tab_bar;
         let settings_button = parse_status_text(
             "⚙",
             if config.use_fancy_tab_bar {
@@ -1034,7 +1038,7 @@ impl TabBarState {
             new_tab.len()
         } else {
             0
-        }) + (if config.show_settings_button_in_tab_bar {
+        }) + (if show_settings_button {
             settings_button.len()
         } else {
             0
@@ -1219,7 +1223,7 @@ impl TabBarState {
         }
 
         // Settings button
-        if config.show_settings_button_in_tab_bar {
+        if show_settings_button {
             let hover = is_tab_hover(mouse_x, x, settings_button_hover.len());
             let button = if hover {
                 &settings_button_hover
@@ -1556,6 +1560,152 @@ return {{ use_fancy_tab_bar = false, show_new_tab_button_in_tab_bar = false,
             window_id: 0,
             tab_title: title.to_string(),
         }
+    }
+
+    #[test]
+    fn settings_button_visibility_layout_and_hit_regions() -> anyhow::Result<()> {
+        use wezterm_dynamic::Value;
+
+        config::designate_this_as_the_main_thread();
+        let config_file = tempfile::NamedTempFile::new()?;
+        std::fs::write(config_file.path(), "return {}")?;
+        let previous_override = config::config_file_override();
+        config::set_config_file_override(config_file.path());
+        let result = (|| -> anyhow::Result<()> {
+            let tabs = [
+                make_tab(0, 0, true, "first tab"),
+                make_tab(1, 1, false, "second tab"),
+            ];
+            for fancy in [false, true] {
+                for show_tabs in [false, true] {
+                    for show_new in [false, true] {
+                        for show_settings in [false, true] {
+                            let fields: std::collections::BTreeMap<_, _> = [
+                                ("use_fancy_tab_bar", fancy),
+                                ("show_tabs_in_tab_bar", show_tabs),
+                                ("show_new_tab_button_in_tab_bar", show_new),
+                                ("show_settings_button_in_tab_bar", show_settings),
+                            ]
+                            .iter()
+                            .map(|&(key, value)| (Value::String(key.into()), Value::Bool(value)))
+                            .collect();
+                            let config = config::overridden_config(&Value::Object(fields.into()))?;
+                            for width in [4, 8, 60] {
+                                let bar = TabBarState::new(
+                                    width,
+                                    None,
+                                    &tabs,
+                                    &[],
+                                    false,
+                                    None,
+                                    &config,
+                                    "",
+                                    "",
+                                );
+                                let settings = bar
+                                    .items
+                                    .iter()
+                                    .find(|entry| entry.item == TabBarItem::SettingsButton);
+                                assert_eq!(settings.is_some(), fancy && show_settings);
+                                assert_eq!(
+                                    bar.items
+                                        .iter()
+                                        .any(|entry| entry.item == TabBarItem::NewTabButton),
+                                    show_new
+                                );
+                                assert_eq!(
+                                    bar.items
+                                        .iter()
+                                        .filter(|entry| matches!(
+                                            entry.item,
+                                            TabBarItem::Tab { .. }
+                                        ))
+                                        .count(),
+                                    if show_tabs { 2 } else { 0 }
+                                );
+                                if !fancy && show_tabs {
+                                    let controls = if show_new {
+                                        parse_status_text(
+                                            &config.tab_bar_style.new_tab,
+                                            CellAttributes::default(),
+                                        )
+                                        .len()
+                                    } else {
+                                        0
+                                    };
+                                    let budget = tab_width_budget(
+                                        width,
+                                        controls,
+                                        tabs.len(),
+                                        config.tab_max_width,
+                                        false,
+                                    );
+                                    for entry in bar.items.iter().filter(|entry| {
+                                        matches!(entry.item, TabBarItem::Tab { .. })
+                                    }) {
+                                        assert!(entry.width > 0 && entry.width <= budget);
+                                    }
+                                }
+                                if let Some(settings) = settings {
+                                    assert!(settings.width > 0);
+                                    for entry in bar.items.iter().filter(|entry| {
+                                        matches!(
+                                            entry.item,
+                                            TabBarItem::Tab { .. } | TabBarItem::NewTabButton
+                                        )
+                                    }) {
+                                        assert!(entry.x + entry.width <= settings.x);
+                                    }
+                                    assert!(is_tab_hover(
+                                        Some(settings.x),
+                                        settings.x,
+                                        settings.width
+                                    ));
+                                    assert!(is_tab_hover(
+                                        Some(settings.x + settings.width - 1),
+                                        settings.x,
+                                        settings.width
+                                    ));
+                                    assert!(!is_tab_hover(
+                                        Some(settings.x + settings.width),
+                                        settings.x,
+                                        settings.width
+                                    ));
+                                    if settings.x > 0 {
+                                        assert!(!is_tab_hover(
+                                            Some(settings.x - 1),
+                                            settings.x,
+                                            settings.width
+                                        ));
+                                    }
+                                    let ui = bar
+                                        .compute_ui_items(20, 16, 8)
+                                        .into_iter()
+                                        .find(|item| {
+                                            matches!(
+                                                item.item_type,
+                                                UIItemType::TabBar(TabBarItem::SettingsButton)
+                                            )
+                                        })
+                                        .expect("settings hit region");
+                                    assert_eq!(
+                                        (ui.x, ui.width, ui.y, ui.height),
+                                        (settings.x * 8, settings.width * 8, 20, 16)
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(())
+        })();
+        if let Some(path) = previous_override {
+            config::set_config_file_override(&path);
+        } else {
+            config::clear_config_file_override();
+        }
+        result
     }
 
     #[test]

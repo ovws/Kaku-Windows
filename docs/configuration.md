@@ -229,14 +229,16 @@ Hidden when only one tab is open. Auto-generated tab titles show the current
 directory by default. You can change the position, shorten path titles, or opt
 into showing the foreground command alongside the path:
 
-The bundled config shows a separate gear button in the tab bar. Click it to open
-Settings, or set `show_settings_button_in_tab_bar = false` to hide it. This
-button uses a reserved tab bar cell, so it does not cover a tab title or its
-attention indicator.
+The fancy tab bar can show a separate gear button that opens Settings. Enable
+both `use_fancy_tab_bar` and `show_settings_button_in_tab_bar` to show it, or set
+`show_settings_button_in_tab_bar = false` to hide it. The bundled retro bar keeps
+its existing text-cell layout and does not show this control, even when the
+Settings button option is enabled. Use the Settings keyboard shortcut instead.
 
 ```lua
 config.tab_bar_at_bottom = false                   -- move to top
-config.show_settings_button_in_tab_bar = true     -- show a separate Settings button
+config.use_fancy_tab_bar = true                    -- enable the fancy renderer
+config.show_settings_button_in_tab_bar = true     -- show Settings in the fancy bar
 config.tab_title_show_basename_only = true         -- show "dirname" instead of "parent/dirname"
 config.tab_title_show_foreground_process = true    -- show "dirname·codex" while commands run
 config.tab_title_use_pane_title = true             -- show application titles set via OSC 0/2

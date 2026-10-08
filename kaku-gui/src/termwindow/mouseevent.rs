@@ -2892,7 +2892,7 @@ mod tests {
     }
 
     #[test]
-    fn only_tabs_and_new_tab_button_take_the_touch_extension() {
+    fn tabs_and_action_buttons_take_the_touch_extension() {
         use crate::tabbar::TabBarItem;
         use crate::termwindow::UIItemType;
         assert!(tab_bar_item_takes_touch_extension(&UIItemType::TabBar(
@@ -2903,6 +2903,9 @@ mod tests {
         )));
         assert!(tab_bar_item_takes_touch_extension(&UIItemType::TabBar(
             TabBarItem::NewTabButton
+        )));
+        assert!(tab_bar_item_takes_touch_extension(&UIItemType::TabBar(
+            TabBarItem::SettingsButton
         )));
         for item in [
             TabBarItem::None,

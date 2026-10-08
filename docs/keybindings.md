@@ -64,7 +64,7 @@ All keybindings use macOS-native modifier keys. `Opt` = Option/Alt, `Ctrl` = Con
 | Action | Shortcut |
 | :--- | :--- |
 | Clear screen + scrollback | `Cmd + K` |
-| Open Settings panel | `Cmd + ,` or click the tab bar gear button |
+| Open Settings panel | `Cmd + ,` or click the fancy tab bar gear button |
 | Open Command Palette | `Cmd + Shift + P` |
 | Open AI panel | `Cmd + Shift + A` |
 | Open AI Chat | `Cmd + L` |
